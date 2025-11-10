@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { SocialIcon } from 'react-social-icons/component';
+import 'react-social-icons/github';
 import './globals.css';
 import Search from '@/app/components/Search';
 
@@ -29,8 +31,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className="p-8 flex justify-center">
-          <main className="max-w-5xl w-full space-y-6">
+        <div className="p-8 flex justify-center min-h-screen">
+          <main className="max-w-5xl w-full space-y-6 flex flex-col">
             <section className="space-y-2">
               <h1 className="text-4xl font-extrabold mt-16">Livefol.io</h1>
               <p>
@@ -42,6 +44,16 @@ export default function RootLayout({
               <Search />
             </Suspense>
             {children}
+            <footer className="text-sm text-foreground/60 flex items-center justify-between gap-4 py-8 mt-auto">
+              <p>© 2025 Livefol.io</p>
+              <div className="flex items-center gap-4">
+                <SocialIcon
+                  url="https://github.com/redrossa/livefolio"
+                  bgColor="transparent"
+                  fgColor="currentColor"
+                />
+              </div>
+            </footer>
           </main>
         </div>
       </body>

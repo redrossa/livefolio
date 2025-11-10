@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import Search from '@/app/components/Search';
@@ -37,11 +38,25 @@ export default function RootLayout({
                 tactical allocation backtester.
               </p>
             </section>
-            <Search />
+            <Suspense fallback={<SearchSkeleton />}>
+              <Search />
+            </Suspense>
             {children}
           </main>
         </div>
       </body>
     </html>
+  );
+}
+
+function SearchSkeleton() {
+  return (
+    <div className="space-y-2 max-w-md">
+      <div className="flex items-center gap-4">
+        <div className="h-10 flex-1 rounded-xs bg-foreground/10 animate-pulse" />
+        <div className="h-10 w-24 rounded-xs bg-foreground/10 animate-pulse" />
+      </div>
+      <div className="h-4 w-32 rounded-xs bg-foreground/10 animate-pulse" />
+    </div>
   );
 }

@@ -32,7 +32,7 @@ export default function RootLayout({
           <main className="max-w-5xl w-full space-y-6">
             <section className="space-y-2">
               <h1 className="text-4xl font-extrabold mt-16">Livefol.io</h1>
-              <p className="text-xl">
+              <p>
                 Forward test your Testfol.io strategy. Enter a link to a
                 tactical allocation backtester.
               </p>

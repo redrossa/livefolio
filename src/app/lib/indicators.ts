@@ -19,7 +19,11 @@ const utcMidnightTime = (date: Date): number =>
 
 type QuoteRow = {
   date: Date;
-  close?: number | null;
+  high: number | null;
+  low: number | null;
+  open: number | null;
+  close: number | null;
+  volume: number | null;
   adjclose?: number | null;
   adjClose?: number | null;
 };

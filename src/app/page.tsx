@@ -6,6 +6,7 @@ import {
 } from '@/app/lib/strategies';
 import { formatTicker } from '@/app/lib/tickers';
 import Link from 'next/link';
+import { Metadata, ResolvingMetadata } from 'next';
 
 interface Props {
   searchParams: Promise<{ s?: string }>;
@@ -22,6 +23,19 @@ const options: Intl.DateTimeFormatOptions = {
 };
 
 const formatter = new Intl.DateTimeFormat('en-US', options);
+
+export async function generateMetadata(
+  { searchParams }: Readonly<Props>,
+  parent: ResolvingMetadata,
+): Promise<Metadata> {
+  const strategyId = (await searchParams).s;
+  const resolvedMetadata = await parent;
+  const strategy = strategyId ? await getStrategy(strategyId) : null;
+  return {
+    title: strategy ? `Livefol.io | ${strategy.name}` : 'Livefol.io',
+    description: resolvedMetadata.description,
+  };
+}
 
 export default async function Home({ searchParams }: Readonly<Props>) {
   const strategyId = (await searchParams).s;

@@ -18,6 +18,7 @@ import {
   volatility,
 } from '@/app/lib/indicators';
 import { formatTicker } from '@/app/lib/tickers';
+import { cache } from 'react';
 
 type SignalMap = Record<string, boolean>;
 
@@ -27,7 +28,7 @@ export interface EvaluatedStrategy {
   asOf: Date;
 }
 
-export async function getStrategy(id: string): Promise<Strategy> {
+export const getStrategy = cache(async (id: string): Promise<Strategy> => {
   const response = await fetch(`https://testfol.io/api/link/${id}`, {
     cache: 'no-store',
     headers: {
@@ -53,7 +54,7 @@ export async function getStrategy(id: string): Promise<Strategy> {
   }
 
   return payload as Strategy;
-}
+});
 
 export async function evaluateStrategy(
   strategy: Strategy,

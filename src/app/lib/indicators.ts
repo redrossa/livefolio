@@ -444,7 +444,9 @@ export function dayOfMonth(asOf: Date): number {
 }
 
 export function dayOfYear(asOf: Date): number {
-  return asOf.getFullYear();
+  const startOfYear = Date.UTC(asOf.getUTCFullYear(), 0, 1);
+  const target = utcMidnightTime(asOf);
+  return Math.floor((target - startOfYear) / DAY_IN_MS) + 1;
 }
 
 export function threshold(value: number): number {

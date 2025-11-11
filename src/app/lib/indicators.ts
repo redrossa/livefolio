@@ -238,12 +238,22 @@ export async function returnFrom(
     throw new Error('Lookback must be a positive integer');
   }
 
-  const currentPrice = await price(ticker, asOf, leverage);
+  const series = await buildEligibleSeries(
+    ticker,
+    lookback + 1,
+    asOf,
+    leverage,
+  );
 
-  const lookbackStart = getUTCStartOfDay(asOf);
-  lookbackStart.setUTCDate(lookbackStart.getUTCDate() - lookback);
+  if (series.length < lookback + 1) {
+    throw new Error(
+      `Not enough historical data to compute ${lookback}-day return for ${ticker}`,
+    );
+  }
 
-  const pastPrice = await price(ticker, lookbackStart, leverage);
+  const window = series.slice(-(lookback + 1));
+  const pastPrice = window[0].close;
+  const currentPrice = window[window.length - 1].close;
 
   if (pastPrice === 0) {
     throw new Error(

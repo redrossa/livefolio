@@ -24,7 +24,7 @@ type SignalMap = Record<string, boolean>;
 
 export interface EvaluatedStrategy {
   strategy: Strategy;
-  allocation: Allocation;
+  allocationIndex: number;
   asOf: Date;
 }
 
@@ -61,10 +61,13 @@ export async function evaluateStrategy(
 ): Promise<EvaluatedStrategy> {
   const asOf = new Date();
   const signalMap = await createSignalMap(strategy.signals, asOf);
-  const allocation = evaluateAllocation(strategy.allocations, signalMap);
+  const allocationIndex = evaluateAllocationIndex(
+    strategy.allocations,
+    signalMap,
+  );
   return {
     strategy,
-    allocation,
+    allocationIndex,
     asOf,
   };
 }
@@ -139,12 +142,12 @@ async function createSignalMap(
   );
 }
 
-function evaluateAllocation(
+function evaluateAllocationIndex(
   allocations: Allocation[],
   signalMap: SignalMap,
-): Allocation {
+): number {
   return (
-    allocations.find((a) => {
+    allocations.findIndex((a) => {
       const signalValues = a.signals.map((k) => signalMap[k]);
       const condInverted = signalValues.map((v, i) => (a.nots[i] ? !v : v));
 
@@ -161,6 +164,6 @@ function evaluateAllocation(
 
       // Step 2: Evaluate remaining ORs left to right
       return reduced.some(Boolean);
-    }) ?? allocations[allocations.length - 1] // last allocation is the "else" condition
+    }) || allocations.length - 1 // last allocation is the "else" condition
   );
 }

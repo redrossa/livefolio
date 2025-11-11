@@ -318,7 +318,7 @@ export async function volatility(
   const dailyStdDev = Math.sqrt(variance);
 
   const tradingDaysPerYear = 252;
-  return dailyStdDev * Math.sqrt(tradingDaysPerYear);
+  return dailyStdDev * Math.sqrt(tradingDaysPerYear) * 100;
 }
 
 export async function drawdown(

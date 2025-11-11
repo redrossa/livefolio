@@ -17,7 +17,7 @@ import {
   vix,
   volatility,
 } from '@/app/lib/indicators';
-import { formatTicker } from '@/app/lib/tickers';
+import { normalizeTicker } from '@/app/lib/tickers';
 import { cache } from 'react';
 
 type SignalMap = Record<string, boolean>;
@@ -73,22 +73,22 @@ async function evaluateIndicator(
   indicator: Indicator,
   asOf: Date,
 ): Promise<number> {
-  const ticker = formatTicker(indicator.ticker);
+  const { underlying: ticker, leverage } = normalizeTicker(indicator.ticker);
   switch (indicator.type) {
     case 'SMA':
-      return sma(ticker, indicator.lookback!, asOf);
+      return sma(ticker, indicator.lookback!, asOf, leverage);
     case 'EMA':
-      return ema(ticker, indicator.lookback!, asOf);
+      return ema(ticker, indicator.lookback!, asOf, leverage);
     case 'Price':
-      return price(ticker, asOf);
+      return price(ticker, asOf, leverage);
     case 'Return':
-      return returnFrom(ticker, indicator.lookback!, asOf);
+      return returnFrom(ticker, indicator.lookback!, asOf, leverage);
     case 'Volatility':
-      return volatility(ticker, indicator.lookback!, asOf);
+      return volatility(ticker, indicator.lookback!, asOf, leverage);
     case 'Drawdown':
-      return drawdown(ticker, asOf);
+      return drawdown(ticker, asOf, leverage);
     case 'RSI':
-      return rsi(ticker, indicator.lookback!, asOf);
+      return rsi(ticker, indicator.lookback!, asOf, leverage);
     case 'VIX':
       return vix(asOf);
     case 'T10Y':

@@ -6,6 +6,7 @@ import 'react-social-icons/github';
 import './globals.css';
 import Search from '@/app/components/Search';
 import { Analytics } from '@vercel/analytics/next';
+import Link from 'next/link';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -37,8 +38,14 @@ export default function RootLayout({
             <section className="space-y-2">
               <h1 className="text-4xl font-extrabold mt-16">Livefol.io</h1>
               <p>
-                Forward test your Testfol.io strategy. Enter a link to a
-                tactical allocation backtester.
+                Forward test your{' '}
+                <Link
+                  href="https://testfol.io/tactical"
+                  className="text-accent"
+                >
+                  Testfol.io
+                </Link>{' '}
+                strategy. Enter a link to a tactical allocation backtester.
               </p>
             </section>
             <Suspense fallback={<SearchSkeleton />}>

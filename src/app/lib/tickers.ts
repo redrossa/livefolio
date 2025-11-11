@@ -67,7 +67,23 @@ export const TICKER_MAP: Record<string, string> = {
   MCISIM: 'MCI',
 };
 
+export interface NormalizedTicker {
+  underlying: string;
+  leverage: number;
+}
+
+export function normalizeTicker(rawTicker: string): NormalizedTicker {
+  const [ticker, params] = rawTicker.split('?');
+  const underlying = TICKER_MAP[ticker] ?? ticker;
+  const searchParams = new URLSearchParams(params);
+  const leverageString = searchParams.get('L');
+  const leverage = leverageString ? Number(leverageString) : 1;
+  return { underlying, leverage };
+}
+
 export function formatTicker(rawTicker: string): string {
-  const [ticker] = rawTicker.split('?');
-  return TICKER_MAP[ticker] ?? ticker;
+  const normalized = normalizeTicker(rawTicker);
+  const leverageFormat =
+    normalized.leverage !== 1 ? `×${normalized.leverage}` : '';
+  return `${normalized.underlying}${leverageFormat}`;
 }

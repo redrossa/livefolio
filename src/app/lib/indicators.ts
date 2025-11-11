@@ -28,15 +28,17 @@ type QuoteRow = {
   adjClose?: number | null;
 };
 
+type CloseSeriesEntry = { date: Date; close: number };
+
 const getCloseValue = (quote: QuoteRow): number | null =>
   quote.close ?? quote.adjclose ?? quote.adjClose ?? null;
 
-async function fetchDailyQuotes(
-  ticker: string,
+async function fetchQuoteRows(
+  symbol: string,
   period1: Date,
   period2: Date,
 ): Promise<QuoteRow[]> {
-  const result = await yahooFinance.chart(ticker, {
+  const result = await yahooFinance.chart(symbol, {
     period1,
     period2,
     interval: '1d',
@@ -47,38 +49,97 @@ async function fetchDailyQuotes(
   return quotes.filter((quote): quote is QuoteRow => Boolean(quote.date));
 }
 
-type CloseSeriesEntry = { date: Date; close: number };
-
-async function buildSeriesUpTo(
-  ticker: string,
-  asOf: Date,
-  period1: Date,
-): Promise<CloseSeriesEntry[]> {
-  const dayStart = getUTCStartOfDay(asOf);
-  const period2 = new Date(dayStart.getTime() + DAY_IN_MS); // exclusive end
-
-  const history = await fetchDailyQuotes(ticker, period1, period2);
-
-  let series = history
+function mapUnderlyingSeries(quotes: QuoteRow[]): CloseSeriesEntry[] {
+  return quotes
     .map((row) => {
       const close = getCloseValue(row);
       return close == null ? null : { date: row.date, close };
     })
     .filter((row): row is CloseSeriesEntry => Boolean(row))
-    .filter((row) => row.date.getTime() < period2.getTime())
     .sort((a, b) => a.date.getTime() - b.date.getTime());
+}
 
-  if (isSameUTCDate(asOf, new Date())) {
-    const hasToday = series.some((entry) => isSameUTCDate(entry.date, asOf));
-    if (!hasToday) {
-      const todayPrice = await price(ticker, asOf);
-      series = [...series, { date: new Date(asOf), close: todayPrice }].sort(
-        (a, b) => a.date.getTime() - b.date.getTime(),
+function applyLeverage(
+  series: CloseSeriesEntry[],
+  leverage: number,
+): CloseSeriesEntry[] {
+  if (leverage === 1 || series.length === 0) {
+    return series;
+  }
+
+  const leveraged: CloseSeriesEntry[] = [
+    { date: series[0].date, close: series[0].close },
+  ];
+  let syntheticClose = series[0].close;
+
+  for (let i = 1; i < series.length; i++) {
+    const prevClose = series[i - 1].close;
+    if (prevClose === 0) {
+      throw new Error(
+        'Cannot compute leveraged price because a previous close was zero',
       );
+    }
+
+    const currClose = series[i].close;
+    const dailyReturn = currClose / prevClose - 1;
+    syntheticClose = syntheticClose * (1 + leverage * dailyReturn);
+    leveraged.push({ date: series[i].date, close: syntheticClose });
+  }
+
+  return leveraged;
+}
+
+async function getRealtimePrice(symbol: string): Promise<number> {
+  const quote = await yahooFinance.quote(symbol);
+  const realTimePrice =
+    quote.regularMarketPrice ??
+    quote.postMarketPrice ??
+    quote.preMarketPrice ??
+    quote.bid ??
+    quote.ask;
+
+  if (realTimePrice == null) {
+    throw new Error(`No real-time price available for ${symbol}`);
+  }
+
+  return realTimePrice;
+}
+
+async function buildSeriesUpTo(
+  ticker: string,
+  asOf: Date,
+  period1: Date,
+  leverage = 1,
+): Promise<CloseSeriesEntry[]> {
+  const dayStart = getUTCStartOfDay(asOf);
+  const period2 = new Date(dayStart.getTime() + DAY_IN_MS); // exclusive end
+
+  const quotes = await fetchQuoteRows(ticker, period1, period2);
+  const underlyingSeries = mapUnderlyingSeries(quotes);
+  let series = applyLeverage(underlyingSeries, leverage).filter(
+    (entry) => entry.date.getTime() < period2.getTime(),
+  );
+
+  const targetTime = utcMidnightTime(asOf);
+
+  if (isSameUTCDate(asOf, new Date()) && series.length) {
+    const hasToday = series.some((entry) => isSameUTCDate(entry.date, asOf));
+    if (!hasToday && underlyingSeries.length) {
+      const lastUnderlyingClose =
+        underlyingSeries[underlyingSeries.length - 1].close;
+      if (lastUnderlyingClose !== 0) {
+        const lastSyntheticClose = series[series.length - 1].close;
+        const realtimeUnderlying = await getRealtimePrice(ticker);
+        const dailyReturn = lastUnderlyingClose
+          ? realtimeUnderlying / lastUnderlyingClose - 1
+          : 0;
+        const leveragedToday =
+          lastSyntheticClose * (1 + leverage * dailyReturn);
+        series = [...series, { date: new Date(asOf), close: leveragedToday }];
+      }
     }
   }
 
-  const targetTime = utcMidnightTime(asOf);
   return series.filter((entry) => utcMidnightTime(entry.date) <= targetTime);
 }
 
@@ -86,23 +147,25 @@ async function buildEligibleSeries(
   ticker: string,
   lookback: number,
   asOf: Date,
+  leverage = 1,
 ): Promise<CloseSeriesEntry[]> {
   const dayStart = getUTCStartOfDay(asOf);
   const bufferDays = Math.max(lookback * 2, lookback + 15); // cover weekends/holidays
   const period1 = new Date(dayStart.getTime() - bufferDays * DAY_IN_MS);
-  return buildSeriesUpTo(ticker, asOf, period1);
+  return buildSeriesUpTo(ticker, asOf, period1, leverage);
 }
 
 export async function sma(
   ticker: string,
   lookback: number,
   asOf: Date,
+  leverage = 1,
 ): Promise<number> {
   if (lookback <= 0) {
     throw new Error('Lookback must be a positive integer');
   }
 
-  const eligible = await buildEligibleSeries(ticker, lookback, asOf);
+  const eligible = await buildEligibleSeries(ticker, lookback, asOf, leverage);
 
   if (eligible.length < lookback) {
     throw new Error(
@@ -120,12 +183,13 @@ export async function ema(
   ticker: string,
   lookback: number,
   asOf: Date,
+  leverage = 1,
 ): Promise<number> {
   if (lookback <= 0) {
     throw new Error('Lookback must be a positive integer');
   }
 
-  const eligible = await buildEligibleSeries(ticker, lookback, asOf);
+  const eligible = await buildEligibleSeries(ticker, lookback, asOf, leverage);
 
   if (eligible.length < lookback) {
     throw new Error(
@@ -144,35 +208,16 @@ export async function ema(
   return emaValue;
 }
 
-export async function price(ticker: string, asOf: Date): Promise<number> {
-  const now = new Date();
+export async function price(
+  ticker: string,
+  asOf: Date,
+  leverage = 1,
+): Promise<number> {
+  const dayStart = getUTCStartOfDay(asOf);
+  const period1 = new Date(dayStart.getTime() - 40 * DAY_IN_MS);
+  const series = await buildSeriesUpTo(ticker, asOf, period1, leverage);
 
-  if (isSameUTCDate(asOf, now)) {
-    const quote = await yahooFinance.quote(ticker);
-    const realTimePrice =
-      quote.regularMarketPrice ??
-      quote.postMarketPrice ??
-      quote.preMarketPrice ??
-      quote.bid ??
-      quote.ask;
-
-    if (realTimePrice == null) {
-      throw new Error(`No real-time price available for ${ticker}`);
-    }
-
-    return realTimePrice;
-  }
-
-  const dayStart = new Date(
-    Date.UTC(asOf.getUTCFullYear(), asOf.getUTCMonth(), asOf.getUTCDate()),
-  );
-  const dayEnd = new Date(dayStart.getTime() + DAY_IN_MS);
-
-  const history = await fetchDailyQuotes(ticker, dayStart, dayEnd);
-
-  const match = history.find(
-    (row) => row.date && isSameUTCDate(row.date, asOf),
-  );
+  const match = series.find((entry) => isSameUTCDate(entry.date, asOf));
 
   if (!match) {
     throw new Error(
@@ -180,32 +225,25 @@ export async function price(ticker: string, asOf: Date): Promise<number> {
     );
   }
 
-  const close = getCloseValue(match);
-
-  if (close == null) {
-    throw new Error(
-      `Historical record for ${ticker} on ${match.date.toISOString()} is missing close data`,
-    );
-  }
-
-  return close;
+  return match.close;
 }
 
 export async function returnFrom(
   ticker: string,
   lookback: number,
   asOf: Date,
+  leverage = 1,
 ): Promise<number> {
   if (lookback <= 0) {
     throw new Error('Lookback must be a positive integer');
   }
 
-  const currentPrice = await price(ticker, asOf);
+  const currentPrice = await price(ticker, asOf, leverage);
 
   const lookbackStart = getUTCStartOfDay(asOf);
   lookbackStart.setUTCDate(lookbackStart.getUTCDate() - lookback);
 
-  const pastPrice = await price(ticker, lookbackStart);
+  const pastPrice = await price(ticker, lookbackStart, leverage);
 
   if (pastPrice === 0) {
     throw new Error(
@@ -220,12 +258,18 @@ export async function volatility(
   ticker: string,
   lookback: number,
   asOf: Date,
+  leverage = 1,
 ): Promise<number> {
   if (lookback <= 1) {
     throw new Error('Lookback must be greater than 1 to compute volatility');
   }
 
-  const eligible = await buildEligibleSeries(ticker, lookback + 1, asOf);
+  const eligible = await buildEligibleSeries(
+    ticker,
+    lookback + 1,
+    asOf,
+    leverage,
+  );
 
   if (eligible.length < lookback + 1) {
     throw new Error(
@@ -267,8 +311,12 @@ export async function volatility(
   return dailyStdDev * Math.sqrt(tradingDaysPerYear);
 }
 
-export async function drawdown(ticker: string, asOf: Date): Promise<number> {
-  const eligible = await buildSeriesUpTo(ticker, asOf, new Date(0));
+export async function drawdown(
+  ticker: string,
+  asOf: Date,
+  leverage = 1,
+): Promise<number> {
+  const eligible = await buildSeriesUpTo(ticker, asOf, new Date(0), leverage);
 
   if (!eligible.length) {
     throw new Error(`No historical data to compute drawdown for ${ticker}`);
@@ -291,17 +339,21 @@ export async function rsi(
   ticker: string,
   lookback: number,
   asOf: Date,
+  leverage = 1,
 ): Promise<number> {
   if (lookback <= 0) {
     throw new Error('Lookback must be a positive integer');
   }
 
-  const eligible = await buildEligibleSeries(ticker, lookback + 1, asOf);
+  const eligible = await buildEligibleSeries(
+    ticker,
+    lookback + 1,
+    asOf,
+    leverage,
+  );
 
   if (eligible.length < lookback + 1) {
-    throw new Error(
-      `Not enough historical data to compute RSI for ${ticker}`,
-    );
+    throw new Error(`Not enough historical data to compute RSI for ${ticker}`);
   }
 
   const window = eligible.slice(-(lookback + 1));

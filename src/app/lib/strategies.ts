@@ -146,24 +146,23 @@ function evaluateAllocationIndex(
   allocations: Allocation[],
   signalMap: SignalMap,
 ): number {
-  return (
-    allocations.findIndex((a) => {
-      const signalValues = a.signals.map((k) => signalMap[k]);
-      const condInverted = signalValues.map((v, i) => (a.nots[i] ? !v : v));
+  const index = allocations.findIndex((a) => {
+    const signalValues = a.signals.map((k) => signalMap[k]);
+    const condInverted = signalValues.map((v, i) => (a.nots[i] ? !v : v));
 
-      // Step 1: resolve all ANDs first
-      const reduced: boolean[] = [condInverted[0]];
-      for (let i = 0; i < a.ops.length; i++) {
-        if (a.ops[i] === 'AND') {
-          const last = reduced.pop()!;
-          reduced.push(last && condInverted[i + 1]); // multiply for AND
-        } else {
-          reduced.push(condInverted[i + 1]);
-        }
+    // Step 1: resolve all ANDs first
+    const reduced: boolean[] = [condInverted[0]];
+    for (let i = 0; i < a.ops.length; i++) {
+      if (a.ops[i] === 'AND') {
+        const last = reduced.pop()!;
+        reduced.push(last && condInverted[i + 1]); // multiply for AND
+      } else {
+        reduced.push(condInverted[i + 1]);
       }
+    }
 
-      // Step 2: Evaluate remaining ORs left to right
-      return reduced.some(Boolean);
-    }) || allocations.length - 1 // last allocation is the "else" condition
-  );
+    // Step 2: Evaluate remaining ORs left to right
+    return reduced.some(Boolean);
+  });
+  return index >= 0 ? index : allocations.length - 1; // last allocation is the "else" condition
 }

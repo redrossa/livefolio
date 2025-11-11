@@ -5,7 +5,7 @@ import { SocialIcon } from 'react-social-icons/component';
 import 'react-social-icons/github';
 import './globals.css';
 import Search from '@/app/components/Search';
-import { Analytics } from '@vercel/analytics/next';
+import { Analytics, type AnalyticsProps } from '@vercel/analytics/next';
 import Link from 'next/link';
 
 const geistSans = Geist({
@@ -52,7 +52,9 @@ export default function RootLayout({
               <Search />
             </Suspense>
             {children}
-            <Analytics />
+            <Analytics
+              mode={(process.env.MODE as AnalyticsProps['mode']) ?? 'auto'}
+            />
             <footer className="text-sm text-foreground/60 flex items-center justify-between gap-4 py-8 mt-auto">
               <p>© 2025 Livefol.io</p>
               <div className="flex items-center gap-4">

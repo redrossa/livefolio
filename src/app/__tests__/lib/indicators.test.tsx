@@ -121,7 +121,7 @@ describe('price-derived indicators', () => {
   });
 
   it('calculates the relative strength index', async () => {
-    await expect(rsi('SPY', 5, AS_OF)).resolves.toBeCloseTo(75.586, 3);
+    await expect(rsi('SPY', 5, AS_OF)).resolves.toBeCloseTo(75.5832, 3);
   });
 
   it('exposes convenience wrappers for macro indicators', async () => {

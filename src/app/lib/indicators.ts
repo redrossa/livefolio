@@ -173,6 +173,19 @@ async function buildEligibleSeries(
   leverage = 1,
 ): Promise<CloseSeriesEntry[]> {
   const asOfClose = getMarketCloseUTC(asOf);
+
+  if (ticker === 'ZEROX') {
+    const count = Math.max(lookback, 1);
+    const zeroSeries: CloseSeriesEntry[] = [];
+    for (let i = count - 1; i >= 0; i--) {
+      zeroSeries.push({
+        date: new Date(asOfClose.getTime() - i * DAY_IN_MS),
+        close: 0,
+      });
+    }
+    return zeroSeries;
+  }
+
   const bufferDays = Math.max(lookback * 2, lookback + 15); // cover weekends/holidays
   const period1 = new Date(asOfClose.getTime() - bufferDays * DAY_IN_MS);
   return buildSeriesUpTo(ticker, asOf, period1, leverage);

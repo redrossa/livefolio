@@ -7,6 +7,9 @@ import {
 import { formatTicker } from '@/lib/tickers';
 import Link from 'next/link';
 import { Metadata, ResolvingMetadata } from 'next';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import ShareButton from '@/components/ShareButton';
+import VisitTestfolioButton from '@/components/VisitTestfolioButton';
 import Subscribe from '@/components/Subscribe';
 
 interface Props {
@@ -55,43 +58,52 @@ export default async function Home({ searchParams }: Readonly<Props>) {
   const allocation = evaluated.strategy.allocations[evaluated.allocationIndex];
 
   return (
-    <section className="space-y-4 border-t border-foreground/20 pt-4">
-      <div>
-        <p className="text-sm text-foreground/60">Strategy</p>
-        <h2 className="text-3xl font-bold mb-2">
-          {evaluated.strategy.name || 'Untitled Strategy'}
-        </h2>
+    <div className="space-y-6">
+      <section>
+        <p className="muted">Strategy</p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+          <h1>{evaluated.strategy.name || 'Untitled Strategy'}</h1>
+          <div className="space-x-2">
+            <VisitTestfolioButton />
+            <ShareButton />
+          </div>
+        </div>
+        <Card className="mt-6 rounded-md">
+          <CardHeader className="gap-0">
+            <p className="muted">Current Allocation</p>
+            <h2>
+              {allocation.name || `Allocation ${evaluated.allocationIndex}`}
+            </h2>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4 text-lg">
+              <span className="large">Holdings</span>
+              <span className="large">Distributions</span>
+              {allocation.tickers.map((ticker) => (
+                <Fragment key={ticker.ticker}>
+                  <span className="small">{formatTicker(ticker.ticker)}</span>
+                  <span className="small">{ticker.percent}%</span>
+                </Fragment>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
         <p>
-          Showing current holdings as of{' '}
+          Showing holdings as of{' '}
           <strong>{formatter.format(evaluated.asOf)}</strong>. Powered by{' '}
           <Link
             href="https://github.com/gadicc/yahoo-finance2"
-            className="text-accent underline"
+            target="_blank"
+            className="link"
           >
             yahoo-finance2
           </Link>
           .
         </p>
-      </div>
-      <div className="max-w-lg border border-solid border-foreground/10 rounded-xs p-8 space-y-6">
-        <div>
-          <p className="text-sm text-foreground/60">Allocation</p>
-          <h3 className="text-2xl">
-            {allocation.name || `Allocation ${evaluated.allocationIndex}`}
-          </h3>
-        </div>
-        <div className="grid grid-cols-2 gap-4 text-lg">
-          <p className="font-bold">Holdings</p>
-          <p className="font-bold">Distributions</p>
-          {allocation.tickers.map((ticker) => (
-            <Fragment key={ticker.ticker}>
-              <p>{formatTicker(ticker.ticker)}</p>
-              <p>{ticker.percent}%</p>
-            </Fragment>
-          ))}
-        </div>
-      </div>
-      <Subscribe />
-    </section>
+      </section>
+      <section>
+        <Subscribe />
+      </section>
+    </div>
   );
 }

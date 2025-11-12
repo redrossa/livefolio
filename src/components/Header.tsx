@@ -1,0 +1,30 @@
+import ThemeToggle from '@/components/ThemeToggle';
+import { Suspense } from 'react';
+import Search from '@/components/Search';
+import Link from 'next/link';
+
+const Header = () => (
+  <header className="space-y-8">
+    <div className="flex justify-between items-center">
+      <h4>
+        <Link href="/">Livefol.io</Link>
+      </h4>
+      <ThemeToggle />
+    </div>
+    <Suspense fallback={<SearchSkeleton />}>
+      <Search />
+    </Suspense>
+  </header>
+);
+
+const SearchSkeleton = () => (
+  <div className="space-y-2 max-w-md">
+    <div className="flex items-center gap-4">
+      <div className="h-10 flex-1 rounded-xs bg-foreground/10 animate-pulse" />
+      <div className="h-10 w-24 rounded-xs bg-foreground/10 animate-pulse" />
+    </div>
+    <div className="h-4 w-32 rounded-xs bg-foreground/10 animate-pulse" />
+  </div>
+);
+
+export default Header;

@@ -3,7 +3,7 @@ import YahooFinance from 'yahoo-finance2';
 const yahooFinance = new YahooFinance();
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
-
+const MARKET_CLOSE_UTC_HOUR = 21; // 4:00 p.m. ET expressed in UTC
 const isSameUTCDate = (a: Date, b: Date): boolean =>
   a.getUTCFullYear() === b.getUTCFullYear() &&
   a.getUTCMonth() === b.getUTCMonth() &&
@@ -11,11 +11,27 @@ const isSameUTCDate = (a: Date, b: Date): boolean =>
 
 const getUTCStartOfDay = (date: Date): Date =>
   new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+    ),
   );
 
-const utcMidnightTime = (date: Date): number =>
-  getUTCStartOfDay(date).getTime();
+const getMarketCloseUTC = (date: Date): Date => {
+  return new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+      MARKET_CLOSE_UTC_HOUR,
+      0,
+    ),
+  );
+};
+
+const marketCloseTimestamp = (date: Date): number =>
+  getMarketCloseUTC(date).getTime();
 
 type QuoteRow = {
   date: Date;
@@ -53,7 +69,9 @@ function mapUnderlyingSeries(quotes: QuoteRow[]): CloseSeriesEntry[] {
   return quotes
     .map((row) => {
       const close = getCloseValue(row);
-      return close == null ? null : { date: row.date, close };
+      return close == null
+        ? null
+        : { date: getMarketCloseUTC(row.date), close };
     })
     .filter((row): row is CloseSeriesEntry => Boolean(row))
     .sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -111,8 +129,8 @@ async function buildSeriesUpTo(
   period1: Date,
   leverage = 1,
 ): Promise<CloseSeriesEntry[]> {
-  const dayStart = getUTCStartOfDay(asOf);
-  const period2 = new Date(dayStart.getTime() + DAY_IN_MS); // exclusive end
+  const asOfClose = getMarketCloseUTC(asOf);
+  const period2 = new Date(asOfClose.getTime() + DAY_IN_MS); // exclusive end
 
   const quotes = await fetchQuoteRows(ticker, period1, period2);
   const underlyingSeries = mapUnderlyingSeries(quotes);
@@ -120,10 +138,12 @@ async function buildSeriesUpTo(
     (entry) => entry.date.getTime() < period2.getTime(),
   );
 
-  const targetTime = utcMidnightTime(asOf);
+  const targetTime = marketCloseTimestamp(asOf);
 
   if (isSameUTCDate(asOf, new Date()) && series.length) {
-    const hasToday = series.some((entry) => isSameUTCDate(entry.date, asOf));
+    const hasToday = series.some(
+      (entry) => entry.date.getTime() === targetTime,
+    );
     if (!hasToday && underlyingSeries.length) {
       const lastUnderlyingClose =
         underlyingSeries[underlyingSeries.length - 1].close;
@@ -135,12 +155,15 @@ async function buildSeriesUpTo(
           : 0;
         const leveragedToday =
           lastSyntheticClose * (1 + leverage * dailyReturn);
-        series = [...series, { date: new Date(asOf), close: leveragedToday }];
+        series = [
+          ...series,
+          { date: getMarketCloseUTC(asOf), close: leveragedToday },
+        ];
       }
     }
   }
 
-  return series.filter((entry) => utcMidnightTime(entry.date) <= targetTime);
+  return series.filter((entry) => entry.date.getTime() <= targetTime);
 }
 
 async function buildEligibleSeries(
@@ -149,9 +172,9 @@ async function buildEligibleSeries(
   asOf: Date,
   leverage = 1,
 ): Promise<CloseSeriesEntry[]> {
-  const dayStart = getUTCStartOfDay(asOf);
+  const asOfClose = getMarketCloseUTC(asOf);
   const bufferDays = Math.max(lookback * 2, lookback + 15); // cover weekends/holidays
-  const period1 = new Date(dayStart.getTime() - bufferDays * DAY_IN_MS);
+  const period1 = new Date(asOfClose.getTime() - bufferDays * DAY_IN_MS);
   return buildSeriesUpTo(ticker, asOf, period1, leverage);
 }
 
@@ -213,11 +236,12 @@ export async function price(
   asOf: Date,
   leverage = 1,
 ): Promise<number> {
-  const dayStart = getUTCStartOfDay(asOf);
-  const period1 = new Date(dayStart.getTime() - 40 * DAY_IN_MS);
+  const asOfClose = getMarketCloseUTC(asOf);
+  const period1 = new Date(asOfClose.getTime() - 40 * DAY_IN_MS);
   const series = await buildSeriesUpTo(ticker, asOf, period1, leverage);
 
-  const match = series.find((entry) => isSameUTCDate(entry.date, asOf));
+  const targetTime = marketCloseTimestamp(asOf);
+  const match = series.find((entry) => entry.date.getTime() === targetTime);
 
   if (!match) {
     throw new Error(
@@ -432,19 +456,21 @@ export async function t3m(asOf: Date): Promise<number> {
 }
 
 export function month(asOf: Date): number {
-  return asOf.getMonth() + 1;
+  return asOf.getUTCMonth() + 1;
 }
 
 export function dayOfWeek(asOf: Date): number {
-  return asOf.getDay();
+  return asOf.getUTCDay();
 }
 
 export function dayOfMonth(asOf: Date): number {
-  return asOf.getDate();
+  return asOf.getUTCDate();
 }
 
 export function dayOfYear(asOf: Date): number {
-  return asOf.getFullYear();
+  const startOfYear = Date.UTC(asOf.getUTCFullYear(), 0, 1);
+  const target = getUTCStartOfDay(asOf).getTime();
+  return Math.floor((target - startOfYear) / DAY_IN_MS) + 1;
 }
 
 export function threshold(value: number): number {

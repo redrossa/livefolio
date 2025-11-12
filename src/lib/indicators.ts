@@ -1,9 +1,11 @@
 import YahooFinance from 'yahoo-finance2';
+import { ObservationSeries } from '@/lib/fred';
 
 const yahooFinance = new YahooFinance();
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const MARKET_CLOSE_UTC_HOUR = 21; // 4:00 p.m. ET expressed in UTC
+const FRED_SERIES = new Set(['DTB3', 'DFF', 'CPIAUCNS']);
 const isSameUTCDate = (a: Date, b: Date): boolean =>
   a.getUTCFullYear() === b.getUTCFullYear() &&
   a.getUTCMonth() === b.getUTCMonth() &&
@@ -11,11 +13,7 @@ const isSameUTCDate = (a: Date, b: Date): boolean =>
 
 const getUTCStartOfDay = (date: Date): Date =>
   new Date(
-    Date.UTC(
-      date.getUTCFullYear(),
-      date.getUTCMonth(),
-      date.getUTCDate(),
-    ),
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
   );
 
 const getMarketCloseUTC = (date: Date): Date => {
@@ -49,11 +47,17 @@ type CloseSeriesEntry = { date: Date; close: number };
 const getCloseValue = (quote: QuoteRow): number | null =>
   quote.close ?? quote.adjclose ?? quote.adjClose ?? null;
 
+const formatFredDate = (date: Date): string => date.toISOString().slice(0, 10);
+
 async function fetchQuoteRows(
   symbol: string,
   period1: Date,
   period2: Date,
 ): Promise<QuoteRow[]> {
+  if (FRED_SERIES.has(symbol)) {
+    return fetchFredQuoteRows(symbol, period1, period2);
+  }
+
   const result = await yahooFinance.chart(symbol, {
     period1,
     period2,
@@ -63,6 +67,59 @@ async function fetchQuoteRows(
 
   const quotes = result.quotes ?? [];
   return quotes.filter((quote): quote is QuoteRow => Boolean(quote.date));
+}
+
+async function fetchFredQuoteRows(
+  symbol: string,
+  period1: Date,
+  period2: Date,
+): Promise<QuoteRow[]> {
+  const apiKey = process.env.FRED_API_KEY;
+  if (!apiKey) {
+    throw new Error('FRED_API_KEY environment variable is required');
+  }
+
+  const params = new URLSearchParams({
+    series_id: symbol,
+    api_key: apiKey,
+    file_type: 'json',
+    observation_start: formatFredDate(period1),
+    observation_end: formatFredDate(period2),
+  });
+
+  const response = await fetch(
+    `https://api.stlouisfed.org/fred/series/observations?${params.toString()}`,
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch FRED series ${symbol}: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  const payload = (await response.json()) as ObservationSeries;
+  const observations = Array.isArray(payload?.observations)
+    ? payload.observations
+    : [];
+
+  return observations
+    .map((obs) => {
+      const value = Number(obs.value);
+      const date = new Date(obs.date);
+      if (!Number.isFinite(value) || Number.isNaN(date.getTime())) {
+        return null;
+      }
+
+      return {
+        date,
+        high: null,
+        low: null,
+        open: null,
+        close: value,
+        volume: null,
+      } as QuoteRow;
+    })
+    .filter((row): row is QuoteRow => Boolean(row));
 }
 
 function mapUnderlyingSeries(quotes: QuoteRow[]): CloseSeriesEntry[] {
@@ -139,8 +196,9 @@ async function buildSeriesUpTo(
   );
 
   const targetTime = marketCloseTimestamp(asOf);
+  const isFredTicker = FRED_SERIES.has(ticker);
 
-  if (isSameUTCDate(asOf, new Date()) && series.length) {
+  if (!isFredTicker && isSameUTCDate(asOf, new Date()) && series.length) {
     const hasToday = series.some(
       (entry) => entry.date.getTime() === targetTime,
     );
@@ -173,6 +231,19 @@ async function buildEligibleSeries(
   leverage = 1,
 ): Promise<CloseSeriesEntry[]> {
   const asOfClose = getMarketCloseUTC(asOf);
+
+  if (ticker === 'ZEROX') {
+    const count = Math.max(lookback, 1);
+    const zeroSeries: CloseSeriesEntry[] = [];
+    for (let i = count - 1; i >= 0; i--) {
+      zeroSeries.push({
+        date: new Date(asOfClose.getTime() - i * DAY_IN_MS),
+        close: 0,
+      });
+    }
+    return zeroSeries;
+  }
+
   const bufferDays = Math.max(lookback * 2, lookback + 15); // cover weekends/holidays
   const period1 = new Date(asOfClose.getTime() - bufferDays * DAY_IN_MS);
   return buildSeriesUpTo(ticker, asOf, period1, leverage);

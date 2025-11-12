@@ -3,11 +3,11 @@ import {
   EvaluatedStrategy,
   evaluateStrategy,
   getStrategy,
-} from '@/app/lib/strategies';
-import { formatTicker } from '@/app/lib/tickers';
+} from '@/lib/strategies';
+import { formatTicker } from '@/lib/tickers';
 import Link from 'next/link';
 import { Metadata, ResolvingMetadata } from 'next';
-import Subscribe from '@/app/components/Subscribe';
+import Subscribe from '@/components/Subscribe';
 
 interface Props {
   searchParams: Promise<{ s?: string }>;

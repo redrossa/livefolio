@@ -4,7 +4,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import { SocialIcon } from 'react-social-icons/component';
 import 'react-social-icons/github';
 import './globals.css';
-import Search from '@/app/components/Search';
+import Search from '@/components/Search';
 import { Analytics, type AnalyticsProps } from '@vercel/analytics/next';
 import Link from 'next/link';
 

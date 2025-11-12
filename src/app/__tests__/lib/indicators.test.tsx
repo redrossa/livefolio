@@ -101,7 +101,7 @@ describe('price-derived indicators', () => {
   });
 
   it('computes the exponential moving average using smoothing', async () => {
-    await expect(ema('SPY', 5, AS_OF)).resolves.toBeCloseTo(107.6047, 4);
+    await expect(ema('SPY', 5, AS_OF)).resolves.toBeCloseTo(107.604938, 6);
   });
 
   it('returns the closing price for the requested day', async () => {
@@ -109,15 +109,15 @@ describe('price-derived indicators', () => {
   });
 
   it('calculates the percentage return over the lookback', async () => {
-    await expect(returnFrom('SPY', 5, AS_OF)).resolves.toBeCloseTo(3.8461, 4);
+    await expect(returnFrom('SPY', 5, AS_OF)).resolves.toBeCloseTo(3.8461538, 6);
   });
 
   it('annualizes the volatility of daily returns', async () => {
-    await expect(volatility('SPY', 5, AS_OF)).resolves.toBeCloseTo(32.113, 3);
+    await expect(volatility('SPY', 5, AS_OF)).resolves.toBeCloseTo(32.1313669, 6);
   });
 
   it('computes drawdown from the historical peak', async () => {
-    await expect(drawdown('SPY', AS_OF)).resolves.toBeCloseTo(1.8181, 4);
+    await expect(drawdown('SPY', AS_OF)).resolves.toBeCloseTo(1.8181818, 6);
   });
 
   it('calculates the relative strength index', async () => {

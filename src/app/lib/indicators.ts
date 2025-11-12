@@ -432,15 +432,15 @@ export async function t3m(asOf: Date): Promise<number> {
 }
 
 export function month(asOf: Date): number {
-  return asOf.getMonth() + 1;
+  return asOf.getUTCMonth() + 1;
 }
 
 export function dayOfWeek(asOf: Date): number {
-  return asOf.getDay();
+  return asOf.getUTCDay();
 }
 
 export function dayOfMonth(asOf: Date): number {
-  return asOf.getDate();
+  return asOf.getUTCDate();
 }
 
 export function dayOfYear(asOf: Date): number {

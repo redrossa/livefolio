@@ -16,8 +16,8 @@ import {
   threshold,
   vix,
   volatility,
-} from '@/app/lib/indicators';
-import { normalizeTicker } from '@/app/lib/tickers';
+} from '@/lib/indicators';
+import { normalizeTicker } from '@/lib/tickers';
 import { cache } from 'react';
 
 type SignalMap = Record<string, boolean>;

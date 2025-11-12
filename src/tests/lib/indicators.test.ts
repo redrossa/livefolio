@@ -15,22 +15,22 @@ import {
   threshold,
   vix,
   volatility,
-} from '@/app/lib/indicators';
+} from '@/lib/indicators';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('yahoo-finance2', () => {
   return {
     default: class {
       async chart(symbol: string) {
-        const chartData =
-          (globalThis as any).__mockYahooFinanceChartData ?? {};
+        const mockGlobal = globalThis as MockGlobal;
+        const chartData = mockGlobal.__mockYahooFinanceChartData ?? {};
         const quotes = chartData[symbol] ?? [];
         return { quotes };
       }
 
       async quote(symbol: string) {
-        const quoteData =
-          (globalThis as any).__mockYahooFinanceQuoteData ?? {};
+        const mockGlobal = globalThis as MockGlobal;
+        const quoteData = mockGlobal.__mockYahooFinanceQuoteData ?? {};
         return quoteData[symbol] ?? {};
       }
     },
@@ -43,8 +43,8 @@ type QuoteInput = {
 };
 
 type MockGlobal = typeof globalThis & {
-  __mockYahooFinanceChartData: Record<string, unknown[]>;
-  __mockYahooFinanceQuoteData: Record<string, unknown>;
+  __mockYahooFinanceChartData?: Record<string, unknown[]>;
+  __mockYahooFinanceQuoteData?: Record<string, unknown>;
 };
 
 const createQuote = ({ date, close }: QuoteInput) => ({
@@ -75,18 +75,10 @@ const resetMockData = () => {
   const globalTarget = globalThis as MockGlobal;
   globalTarget.__mockYahooFinanceChartData = {
     SPY: BASE_SERIES.map(createQuote),
-    '^VIX': [
-      createQuote({ date: '2024-01-10T21:00:00Z', close: 12 }),
-    ],
-    '^TNX': [
-      createQuote({ date: '2024-01-10T21:00:00Z', close: 4.15 }),
-    ],
-    '2YY=F': [
-      createQuote({ date: '2024-01-10T21:00:00Z', close: 4.32 }),
-    ],
-    '^IRX': [
-      createQuote({ date: '2024-01-10T21:00:00Z', close: 5.25 }),
-    ],
+    '^VIX': [createQuote({ date: '2024-01-10T21:00:00Z', close: 12 })],
+    '^TNX': [createQuote({ date: '2024-01-10T21:00:00Z', close: 4.15 })],
+    '2YY=F': [createQuote({ date: '2024-01-10T21:00:00Z', close: 4.32 })],
+    '^IRX': [createQuote({ date: '2024-01-10T21:00:00Z', close: 5.25 })],
   };
   globalTarget.__mockYahooFinanceQuoteData = {};
 };
@@ -109,11 +101,17 @@ describe('price-derived indicators', () => {
   });
 
   it('calculates the percentage return over the lookback', async () => {
-    await expect(returnFrom('SPY', 5, AS_OF)).resolves.toBeCloseTo(3.8461538, 6);
+    await expect(returnFrom('SPY', 5, AS_OF)).resolves.toBeCloseTo(
+      3.8461538,
+      6,
+    );
   });
 
   it('annualizes the volatility of daily returns', async () => {
-    await expect(volatility('SPY', 5, AS_OF)).resolves.toBeCloseTo(32.1313669, 6);
+    await expect(volatility('SPY', 5, AS_OF)).resolves.toBeCloseTo(
+      32.1313669,
+      6,
+    );
   });
 
   it('computes drawdown from the historical peak', async () => {
@@ -133,9 +131,12 @@ describe('price-derived indicators', () => {
 
   it('throws when there is not enough data for the requested SMA', async () => {
     const globalTarget = globalThis as MockGlobal;
-    globalTarget.__mockYahooFinanceChartData.SPY = BASE_SERIES.slice(0, 3).map(
-      createQuote,
-    );
+    if (globalTarget.__mockYahooFinanceChartData) {
+      globalTarget.__mockYahooFinanceChartData.SPY = BASE_SERIES.slice(
+        0,
+        3,
+      ).map(createQuote);
+    }
 
     await expect(sma('SPY', 5, AS_OF)).rejects.toThrow(
       'Not enough historical data to compute 5-day SMA for SPY',

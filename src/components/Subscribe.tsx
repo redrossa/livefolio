@@ -20,7 +20,7 @@ export default function Subscribe() {
   };
 
   return (
-    <form className="space-y-2 mt-4 max-w-2xl" onSubmit={handleSubmit}>
+    <form className="space-y-2 mt-4 max-w-3xl" onSubmit={handleSubmit}>
       <Field>
         <FieldContent>
           <FieldLabel htmlFor="testfolioLink">
@@ -30,7 +30,7 @@ export default function Subscribe() {
             Get notified when a reallocation occurs.
           </FieldDescription>
         </FieldContent>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-col md:flex-row">
           <Input
             type="email"
             name="testfolioLink"

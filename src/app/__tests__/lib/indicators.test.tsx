@@ -56,19 +56,19 @@ const createQuote = ({ date, close }: QuoteInput) => ({
   volume: 1_000,
 });
 
-const AS_OF = new Date('2024-01-10T00:00:00Z');
+const AS_OF = new Date('2024-01-10T21:00:00Z');
 
 const BASE_SERIES = [
-  { date: '2024-01-01T00:00:00Z', close: 100 },
-  { date: '2024-01-02T00:00:00Z', close: 102 },
-  { date: '2024-01-03T00:00:00Z', close: 101 },
-  { date: '2024-01-04T00:00:00Z', close: 103 },
-  { date: '2024-01-05T00:00:00Z', close: 104 },
-  { date: '2024-01-06T00:00:00Z', close: 106 },
-  { date: '2024-01-07T00:00:00Z', close: 105 },
-  { date: '2024-01-08T00:00:00Z', close: 107 },
-  { date: '2024-01-09T00:00:00Z', close: 110 },
-  { date: '2024-01-10T00:00:00Z', close: 108 },
+  { date: '2024-01-01T21:00:00Z', close: 100 },
+  { date: '2024-01-02T21:00:00Z', close: 102 },
+  { date: '2024-01-03T21:00:00Z', close: 101 },
+  { date: '2024-01-04T21:00:00Z', close: 103 },
+  { date: '2024-01-05T21:00:00Z', close: 104 },
+  { date: '2024-01-06T21:00:00Z', close: 106 },
+  { date: '2024-01-07T21:00:00Z', close: 105 },
+  { date: '2024-01-08T21:00:00Z', close: 107 },
+  { date: '2024-01-09T21:00:00Z', close: 110 },
+  { date: '2024-01-10T21:00:00Z', close: 108 },
 ];
 
 const resetMockData = () => {
@@ -76,16 +76,16 @@ const resetMockData = () => {
   globalTarget.__mockYahooFinanceChartData = {
     SPY: BASE_SERIES.map(createQuote),
     '^VIX': [
-      createQuote({ date: '2024-01-10T00:00:00Z', close: 12 }),
+      createQuote({ date: '2024-01-10T21:00:00Z', close: 12 }),
     ],
     '^TNX': [
-      createQuote({ date: '2024-01-10T00:00:00Z', close: 4.15 }),
+      createQuote({ date: '2024-01-10T21:00:00Z', close: 4.15 }),
     ],
     '2YY=F': [
-      createQuote({ date: '2024-01-10T00:00:00Z', close: 4.32 }),
+      createQuote({ date: '2024-01-10T21:00:00Z', close: 4.32 }),
     ],
     '^IRX': [
-      createQuote({ date: '2024-01-10T00:00:00Z', close: 5.25 }),
+      createQuote({ date: '2024-01-10T21:00:00Z', close: 5.25 }),
     ],
   };
   globalTarget.__mockYahooFinanceQuoteData = {};

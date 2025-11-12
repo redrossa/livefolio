@@ -16,7 +16,7 @@ import {
   vix,
   volatility,
 } from '@/app/lib/indicators';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('yahoo-finance2', () => {
   return {

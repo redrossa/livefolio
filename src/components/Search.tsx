@@ -2,6 +2,11 @@
 
 import { FormEvent, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { SendHorizontal } from 'lucide-react';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
+import Link from 'next/link';
 
 const EXPECTED_DOMAIN = 'testfol.io';
 const EXPECTED_PATH = '/tactical';
@@ -15,7 +20,7 @@ export default function Search() {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); // Prevent default form submission and page reload
     const formData = new FormData(event.currentTarget);
-    const rawInput = formData.get('s');
+    const rawInput = formData.get('testfolioLink');
 
     if (typeof rawInput !== 'string' || rawInput.trim().length === 0) {
       setError('Please provide a link to your strategy.');
@@ -60,21 +65,34 @@ export default function Search() {
   };
 
   return (
-    <div className="space-y-2">
-      <form
-        className="flex items-center gap-4 max-w-md"
-        onSubmit={handleSubmit}
-      >
-        <input
-          name="s"
-          placeholder="https://testfol.io/tactical?s=..."
-          className="w-full h-10 px-3 rounded-xs border border-solid border-foreground/10 outline-none focus:border-accent"
-        />
-        <button className="h-10 px-3 rounded-xs bg-foreground text-background hover:bg-foreground/80 font-medium transition-colors">
-          Submit
-        </button>
-      </form>
-      {error && <p className="text-sm text-red-700">{error}</p>}
-    </div>
+    <form className="space-y-2" onSubmit={handleSubmit}>
+      <Field>
+        <FieldLabel htmlFor="testfolioLink">
+          <span>
+            Enter a link to a{' '}
+            <Link
+              href="https://testfol.io/tactical"
+              target="_blank"
+              className="link"
+            >
+              Testfol.io
+            </Link>{' '}
+            tactical allocation strategy.
+          </span>
+        </FieldLabel>
+        <div className="flex gap-2">
+          <Input
+            id="testfolioLink"
+            name="testfolioLink"
+            placeholder="https://testfol.io/tactical?s=..."
+            aria-invalid={!!error}
+          />
+          <Button type="submit" variant="outline" size="icon">
+            <SendHorizontal />
+          </Button>
+        </div>
+        <FieldError>{error}</FieldError>
+      </Field>
+    </form>
   );
 }

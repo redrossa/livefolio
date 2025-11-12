@@ -1,42 +1,51 @@
 'use client';
 
-import { ChangeEvent, FormEvent, useState } from 'react';
+import { FormEvent, useState } from 'react';
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 export default function Subscribe() {
-  const [value, setValue] = useState('');
-  const [message, setMessage] = useState<string>();
-
-  const onChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setValue(event.target.value);
-  };
+  const [isSubmitted, setIsSubmitted] = useState<boolean>();
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setMessage('Sorry, strategy alerts subscription is still in development.');
+    setIsSubmitted(true);
   };
 
   return (
-    <div className="space-y-2">
-      <form
-        className="flex items-center gap-4 max-w-md"
-        onSubmit={handleSubmit}
-      >
-        <div className="flex flex-col space-y-2">
-          <label htmlFor="email">Get notified when reallocation occurs</label>
-          <input
-            name="email"
+    <form className="space-y-2 mt-4 max-w-3xl" onSubmit={handleSubmit}>
+      <Field>
+        <FieldContent>
+          <FieldLabel htmlFor="testfolioLink">
+            Subscribe to this strategy
+          </FieldLabel>
+          <FieldDescription>
+            Get notified when a reallocation occurs.
+          </FieldDescription>
+        </FieldContent>
+        <div className="flex gap-2 flex-col md:flex-row">
+          <Input
             type="email"
+            name="testfolioLink"
             placeholder="Enter your email"
-            className="w-full h-10 px-3 rounded-xs border border-solid border-foreground/10 outline-none focus:border-accent"
-            value={value}
-            onChange={onChange}
           />
+          <Button type="submit" variant="default">
+            Subscribe
+          </Button>
         </div>
-        <button className="self-end h-10 px-3 rounded-xs bg-foreground text-background hover:bg-foreground/80 font-medium transition-colors">
-          Subscribe
-        </button>
-      </form>
-      {message && <p className="text-sm">{message}</p>}
-    </div>
+        {isSubmitted && (
+          <FieldError>
+            Sorry, strategy alert subscription is still in development.
+          </FieldError>
+        )}
+      </Field>
+    </form>
   );
 }

@@ -3,35 +3,7 @@ import YahooFinance from 'yahoo-finance2';
 const yahooFinance = new YahooFinance();
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
-const MARKET_CLOSE_MINUTES = 16 * 60; // 4:00 p.m. Eastern Time
-const EASTERN_TIME_ZONE = 'America/New_York';
-
-const easternOffsetFormatter = new Intl.DateTimeFormat('en-US', {
-  timeZone: EASTERN_TIME_ZONE,
-  timeZoneName: 'shortOffset',
-});
-
-const getEasternOffsetMinutes = (date: Date): number => {
-  const parts = easternOffsetFormatter.formatToParts(date);
-  const offsetPart = parts.find((part) => part.type === 'timeZoneName');
-
-  if (!offsetPart) {
-    throw new Error('Unable to determine Eastern Time offset');
-  }
-
-  const match = offsetPart.value.match(/GMT([+-])(\d{1,2})(?::?(\d{2}))?/);
-
-  if (!match) {
-    throw new Error(`Unexpected Eastern Time offset format: ${offsetPart.value}`);
-  }
-
-  const sign = match[1] === '-' ? -1 : 1;
-  const hours = Number.parseInt(match[2], 10);
-  const minutes = match[3] ? Number.parseInt(match[3], 10) : 0;
-
-  return sign * (hours * 60 + minutes);
-};
-
+const MARKET_CLOSE_UTC_HOUR = 21; // 4:00 p.m. ET expressed in UTC
 const isSameUTCDate = (a: Date, b: Date): boolean =>
   a.getUTCFullYear() === b.getUTCFullYear() &&
   a.getUTCMonth() === b.getUTCMonth() &&
@@ -47,18 +19,13 @@ const getUTCStartOfDay = (date: Date): Date =>
   );
 
 const getMarketCloseUTC = (date: Date): Date => {
-  const offsetMinutes = getEasternOffsetMinutes(date);
-  const utcMinutes = MARKET_CLOSE_MINUTES - offsetMinutes;
-  const utcHour = Math.floor(utcMinutes / 60);
-  const utcMinute = utcMinutes % 60;
-
   return new Date(
     Date.UTC(
       date.getUTCFullYear(),
       date.getUTCMonth(),
       date.getUTCDate(),
-      utcHour,
-      utcMinute,
+      MARKET_CLOSE_UTC_HOUR,
+      0,
     ),
   );
 };

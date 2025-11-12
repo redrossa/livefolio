@@ -11,7 +11,11 @@ const isSameUTCDate = (a: Date, b: Date): boolean =>
 
 const getUTCStartOfDay = (date: Date): Date =>
   new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+    ),
   );
 
 const utcMidnightTime = (date: Date): number =>
@@ -53,7 +57,9 @@ function mapUnderlyingSeries(quotes: QuoteRow[]): CloseSeriesEntry[] {
   return quotes
     .map((row) => {
       const close = getCloseValue(row);
-      return close == null ? null : { date: row.date, close };
+      return close == null
+        ? null
+        : { date: getUTCStartOfDay(row.date), close };
     })
     .filter((row): row is CloseSeriesEntry => Boolean(row))
     .sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -135,7 +141,10 @@ async function buildSeriesUpTo(
           : 0;
         const leveragedToday =
           lastSyntheticClose * (1 + leverage * dailyReturn);
-        series = [...series, { date: new Date(asOf), close: leveragedToday }];
+        series = [
+          ...series,
+          { date: getUTCStartOfDay(asOf), close: leveragedToday },
+        ];
       }
     }
   }

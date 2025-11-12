@@ -2,6 +2,16 @@
 
 import { FormEvent, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 const EXPECTED_DOMAIN = 'testfol.io';
 const EXPECTED_PATH = '/tactical';
@@ -13,7 +23,7 @@ export default function Search() {
   const [error, setError] = useState<string>();
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); // Prevent default form submission and page reload
+    event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const rawInput = formData.get('s');
 
@@ -55,26 +65,37 @@ export default function Search() {
     newSearchParams.set('s', sParam);
     setError('');
 
-    // Update the URL with the new search parameters
     router.push(`${pathname}?${newSearchParams.toString()}`);
   };
 
   return (
-    <div className="space-y-2">
-      <form
-        className="flex items-center gap-4 max-w-md"
-        onSubmit={handleSubmit}
-      >
-        <input
-          name="s"
-          placeholder="https://testfol.io/tactical?s=..."
-          className="w-full h-10 px-3 rounded-xs border border-solid border-foreground/10 outline-none focus:border-accent"
-        />
-        <button className="h-10 px-3 rounded-xs bg-foreground text-background hover:bg-foreground/80 font-medium transition-colors">
-          Submit
-        </button>
-      </form>
-      {error && <p className="text-sm text-red-700">{error}</p>}
-    </div>
+    <Card className="max-w-xl">
+      <CardHeader>
+        <CardTitle>Check your strategy</CardTitle>
+        <CardDescription>
+          Paste the link to your Testfol.io tactical allocation backtester.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <form
+          className="flex flex-col gap-4 sm:flex-row sm:items-end"
+          onSubmit={handleSubmit}
+        >
+          <div className="flex-1 space-y-2">
+            <Label htmlFor="strategy-url">Strategy URL</Label>
+            <Input
+              id="strategy-url"
+              name="s"
+              placeholder="https://testfol.io/tactical?s=..."
+              autoComplete="off"
+            />
+          </div>
+          <Button type="submit" className="sm:w-auto">
+            Submit
+          </Button>
+        </form>
+        {error && <p className="text-sm text-destructive">{error}</p>}
+      </CardContent>
+    </Card>
   );
 }

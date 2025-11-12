@@ -1,6 +1,17 @@
 'use client';
 
 import { ChangeEvent, FormEvent, useState } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 
 export default function Subscribe() {
   const [value, setValue] = useState('');
@@ -16,27 +27,40 @@ export default function Subscribe() {
   };
 
   return (
-    <div className="space-y-2">
-      <form
-        className="flex items-center gap-4 max-w-md"
-        onSubmit={handleSubmit}
-      >
-        <div className="flex flex-col space-y-2">
-          <label htmlFor="email">Get notified when reallocation occurs</label>
-          <input
-            name="email"
-            type="email"
-            placeholder="Enter your email"
-            className="w-full h-10 px-3 rounded-xs border border-solid border-foreground/10 outline-none focus:border-accent"
-            value={value}
-            onChange={onChange}
-          />
-        </div>
-        <button className="self-end h-10 px-3 rounded-xs bg-foreground text-background hover:bg-foreground/80 font-medium transition-colors">
-          Subscribe
-        </button>
-      </form>
-      {message && <p className="text-sm">{message}</p>}
-    </div>
+    <Card className="max-w-xl">
+      <CardHeader>
+        <CardTitle>Subscribe for alerts</CardTitle>
+        <CardDescription>
+          We&apos;ll email you when your strategy triggers a reallocation.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form
+          className="flex flex-col gap-4 sm:flex-row sm:items-end"
+          onSubmit={handleSubmit}
+        >
+          <div className="flex-1 space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="Enter your email"
+              value={value}
+              onChange={onChange}
+              required
+            />
+          </div>
+          <Button type="submit" className="sm:w-auto">
+            Subscribe
+          </Button>
+        </form>
+      </CardContent>
+      {message && (
+        <CardFooter>
+          <p className="text-sm text-muted-foreground">{message}</p>
+        </CardFooter>
+      )}
+    </Card>
   );
 }

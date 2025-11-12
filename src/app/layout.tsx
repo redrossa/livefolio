@@ -39,10 +39,7 @@ export default function RootLayout({
               <h1 className="text-4xl font-extrabold mt-16">Livefol.io</h1>
               <p>
                 Forward test your{' '}
-                <Link
-                  href="https://testfol.io/tactical"
-                  className="text-accent"
-                >
+                <Link href="https://testfol.io/tactical" className="text-primary">
                   Testfol.io
                 </Link>{' '}
                 strategy. Enter a link to a tactical allocation backtester.
@@ -55,7 +52,7 @@ export default function RootLayout({
             <Analytics
               mode={(process.env.MODE as AnalyticsProps['mode']) ?? 'auto'}
             />
-            <footer className="text-sm text-foreground/60 flex items-center justify-between gap-4 py-8 mt-auto">
+            <footer className="text-sm text-muted-foreground flex items-center justify-between gap-4 py-8 mt-auto">
               <p>© 2025 Livefol.io</p>
               <div className="flex items-center gap-4">
                 <SocialIcon
@@ -76,10 +73,10 @@ function SearchSkeleton() {
   return (
     <div className="space-y-2 max-w-md">
       <div className="flex items-center gap-4">
-        <div className="h-10 flex-1 rounded-xs bg-foreground/10 animate-pulse" />
-        <div className="h-10 w-24 rounded-xs bg-foreground/10 animate-pulse" />
+        <div className="h-10 flex-1 rounded-md bg-muted animate-pulse" />
+        <div className="h-10 w-24 rounded-md bg-muted animate-pulse" />
       </div>
-      <div className="h-4 w-32 rounded-xs bg-foreground/10 animate-pulse" />
+      <div className="h-4 w-32 rounded-md bg-muted animate-pulse" />
     </div>
   );
 }

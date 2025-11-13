@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import ShareButton from '@/components/ShareButton';
 import VisitTestfolioButton from '@/components/VisitTestfolioButton';
 import Subscribe from '@/components/Subscribe';
+import ClientTimeFormat from '@/components/ClientTimeFormat';
 
 interface Props {
   searchParams: Promise<{ s?: string }>;

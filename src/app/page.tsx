@@ -16,18 +16,6 @@ interface Props {
   searchParams: Promise<{ s?: string }>;
 }
 
-const options: Intl.DateTimeFormatOptions = {
-  weekday: 'short',
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
-};
-
-const formatter = new Intl.DateTimeFormat('en-US', options);
-
 export async function generateMetadata(
   { searchParams }: Readonly<Props>,
   parent: ResolvingMetadata,
@@ -91,7 +79,21 @@ export default async function Home({ searchParams }: Readonly<Props>) {
         </Card>
         <p>
           Showing holdings as of{' '}
-          <strong>{formatter.format(evaluated.asOf)}</strong>. Powered by{' '}
+          <strong>
+            <ClientTimeFormat
+              formatOptions={{
+                weekday: 'short',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+              }}
+              date={evaluated.asOf}
+            />
+          </strong>
+          . Powered by{' '}
           <Link
             href="https://github.com/gadicc/yahoo-finance2"
             target="_blank"

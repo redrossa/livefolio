@@ -1,5 +1,8 @@
 import YahooFinance from 'yahoo-finance2';
 import { ObservationSeries } from '@/lib/fred';
+import { Comparison, Indicator, IndicatorType } from '@/lib/testfolio';
+import { IconName } from 'lucide-react/dynamic';
+import { formatTicker } from '@/lib/tickers';
 
 const yahooFinance = new YahooFinance();
 
@@ -546,4 +549,94 @@ export function dayOfYear(asOf: Date): number {
 
 export function threshold(value: number): number {
   return value;
+}
+
+const dollarFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+});
+
+const percentFormatter = new Intl.NumberFormat('en-US', {
+  style: 'unit',
+  unit: 'percent',
+  unitDisplay: 'narrow', // or 'short', 'long'
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
+
+const days = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
+
+export function formatDollar(value: number): string {
+  return dollarFormatter.format(value);
+}
+
+export function formatPercent(value: number): string {
+  return percentFormatter.format(value);
+}
+
+export function formatRsi(value: number): string {
+  return value.toFixed(2);
+}
+
+export function formatDayOfWeek(value: number): string {
+  return days[value];
+}
+
+export function formatIndicatorValue(
+  type: IndicatorType,
+  value: number,
+  otherType?: IndicatorType,
+): string {
+  switch (type) {
+    case 'SMA':
+    case 'EMA':
+    case 'Price':
+    case 'VIX':
+    case 'T10Y':
+    case 'T2Y':
+    case 'T3M':
+      return formatDollar(value);
+    case 'RSI':
+      return formatRsi(value);
+    case 'Return':
+    case 'Volatility':
+    case 'Drawdown':
+      return formatPercent(value);
+    case 'Day of Week':
+      return formatDayOfWeek(value);
+    case 'Threshold':
+      return otherType ? formatIndicatorValue(otherType, value) : String(value);
+    default:
+      return String(value);
+  }
+}
+
+export function formatIndicatorName(indicator: Indicator) {
+  const ticker = formatTicker(indicator.ticker);
+  const type = indicator.type;
+  const lookback = indicator.lookback ? `(${indicator.lookback})` : '';
+  const delay = indicator.delay ? `${indicator.delay}d Delay` : '';
+  return `${ticker} ${type} ${lookback} ${delay}`.trim();
+}
+
+export function getComparisonIconName(
+  comparison: Comparison,
+  isInverse: boolean = false,
+): IconName {
+  switch (comparison) {
+    case '>':
+      return !isInverse ? 'chevron-right' : 'chevron-left';
+    case '<':
+      return !isInverse ? 'chevron-left' : 'chevron-right';
+    case '=':
+      return !isInverse ? 'equal' : 'equal-not';
+  }
 }

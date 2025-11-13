@@ -19,6 +19,7 @@ import {
 } from '@/lib/indicators';
 import { normalizeTicker } from '@/lib/tickers';
 import { cache } from 'react';
+import { neon } from '@neondatabase/serverless';
 
 type SignalMap = Record<string, boolean>;
 
@@ -44,14 +45,12 @@ export const getStrategy = cache(async (id: string): Promise<Strategy> => {
 
   const payload = await response.json();
 
-  if (
-    payload &&
-    typeof payload === 'object' &&
-    'value' in payload &&
-    payload.value
-  ) {
-    return payload.value as Strategy;
-  }
+  const sql = neon(`${process.env.DATABASE_URL}`);
+  await sql`
+      INSERT INTO strategy (testfolio_id, definition) 
+      VALUES (${id}, ${JSON.stringify(payload)})
+      ON CONFLICT (testfolio_id) DO NOTHING;
+  `;
 
   return payload as Strategy;
 });

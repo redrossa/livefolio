@@ -106,7 +106,7 @@ export default async function Home({ searchParams }: Readonly<Props>) {
         </p>
       </section>
       <section>
-        <Subscribe />
+        <Subscribe strategyId={strategyId} />
       </section>
     </div>
   );

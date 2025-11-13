@@ -35,8 +35,9 @@ export async function generateMetadata(
   const strategyId = (await searchParams).s;
   const resolvedMetadata = await parent;
   const strategy = strategyId ? await getStrategy(strategyId) : null;
+  const name = strategy?.name ?? 'Untitled Strategy';
   return {
-    title: strategy ? `Livefol.io | ${strategy.name}` : 'Livefol.io',
+    title: strategy ? `Livefol.io | ${name}` : 'Livefol.io',
     description: resolvedMetadata.description,
   };
 }

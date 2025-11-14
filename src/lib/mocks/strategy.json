@@ -1,0 +1,139 @@
+{
+  "name": "Newest",
+  "start_date": "",
+  "end_date": "",
+  "start_val": 10000,
+  "rolling_window": 60,
+  "trading_cost": 0,
+  "signals": [
+    {
+      "name": "Defense",
+      "indicator_1": {
+        "ticker": "SPYSIM",
+        "type": "Price",
+        "value": null,
+        "lookback": null,
+        "delay": null
+      },
+      "comparison": ">",
+      "indicator_2": {
+        "ticker": "SPYSIM",
+        "type": "SMA",
+        "value": null,
+        "lookback": 200,
+        "delay": null
+      },
+      "tolerance": 2.0
+    },
+    {
+      "name": "OS",
+      "indicator_1": {
+        "ticker": "QQQSIM",
+        "type": "RSI",
+        "value": null,
+        "lookback": 10,
+        "delay": null
+      },
+      "comparison": "<",
+      "indicator_2": {
+        "ticker": "",
+        "type": "Threshold",
+        "value": 30,
+        "lookback": null,
+        "delay": null
+      },
+      "tolerance": 2.0
+    },
+    {
+      "name": "A",
+      "indicator_1": {
+        "ticker": "QQQSIM?L=3&E=0.97",
+        "type": "RSI",
+        "value": null,
+        "lookback": 10,
+        "delay": null
+      },
+      "comparison": ">",
+      "indicator_2": {
+        "ticker": "",
+        "type": "Threshold",
+        "value": 80,
+        "lookback": null,
+        "delay": null
+      },
+      "tolerance": 2.0
+    }
+  ],
+  "allocations": [
+    {
+      "name": "VIX",
+      "signals": [
+        "A"
+      ],
+      "ops": [],
+      "nots": [
+        false
+      ],
+      "tickers": [
+        {
+          "ticker": "UVIXSIM?E=4.13",
+          "percent": 100
+        }
+      ],
+      "drag": 0
+    },
+    {
+      "name": "SPMO mix",
+      "signals": [
+        "Defense"
+      ],
+      "ops": [],
+      "nots": [
+        false
+      ],
+      "tickers": [
+        {
+          "ticker": "GLDSIM?L=2&E=0.95",
+          "percent": 25
+        },
+        {
+          "ticker": "QQQSIM?L=2&E=0.95",
+          "percent": 75
+        }
+      ],
+      "drag": 0
+    },
+    {
+      "name": "Defense-OS",
+      "signals": [
+        "OS"
+      ],
+      "ops": [],
+      "nots": [
+        false
+      ],
+      "tickers": [
+        {
+          "ticker": "QQQSIM?L=3&E=0.97",
+          "percent": 100
+        }
+      ],
+      "drag": 0
+    },
+    {
+      "name": "Bear inverse",
+      "signals": [],
+      "ops": [],
+      "nots": [],
+      "tickers": [
+        {
+          "ticker": "CASHX",
+          "percent": 100
+        }
+      ],
+      "drag": 0
+    }
+  ],
+  "trading_freq": "Daily",
+  "trading_offset": 0
+}

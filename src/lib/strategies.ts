@@ -1,4 +1,10 @@
-import { Allocation, Indicator, Signal, Strategy } from './testfolio';
+import {
+  Allocation,
+  Indicator,
+  IndicatorType,
+  Signal,
+  Strategy,
+} from './testfolio';
 import {
   dayOfMonth,
   dayOfWeek,
@@ -28,6 +34,7 @@ export interface EvaluatedSignal extends Signal {
   value2: number;
   isActive: boolean;
   isInverse: boolean;
+  toleranceSign: '+' | '-' | '±';
 }
 
 export interface EvaluatedStrategy {
@@ -36,6 +43,12 @@ export interface EvaluatedStrategy {
   activeSignals: EvaluatedSignal[];
   asOf: Date;
 }
+
+const PERCENT_BASED_INDICATORS: ReadonlySet<IndicatorType> = new Set([
+  'Return',
+  'Volatility',
+  'Drawdown',
+]);
 
 export const getStrategy = cache(async (id: string): Promise<Strategy> => {
   const response = await fetch(`https://testfol.io/api/link/${id}`, {
@@ -128,19 +141,29 @@ async function evaluateSignal(
   const indicatorValue1 = await evaluateIndicator(signal.indicator_1, asOf);
   const indicatorValue2 = await evaluateIndicator(signal.indicator_2, asOf);
   const tolerance = signal.tolerance ?? 0;
+
+  const useAbsoluteTolerance = isPercentBasedIndicator(signal.indicator_1);
+  const lowerBound = useAbsoluteTolerance
+    ? indicatorValue2 - tolerance
+    : indicatorValue2 * (1 - tolerance / 100);
+  const upperBound = useAbsoluteTolerance
+    ? indicatorValue2 + tolerance
+    : indicatorValue2 * (1 + tolerance / 100);
+
   let isActive = false;
+  let toleranceSign: EvaluatedSignal['toleranceSign'];
   switch (signal.comparison) {
     case '>':
-      isActive = indicatorValue1 > indicatorValue2 * (1 + tolerance / 100);
+      isActive = indicatorValue1 > lowerBound;
+      toleranceSign = '-';
       break;
     case '<':
-      isActive = indicatorValue1 < indicatorValue2 * (1 - tolerance / 100);
+      isActive = indicatorValue1 < upperBound;
+      toleranceSign = '+';
       break;
     case '=':
-      // range: i2 - tol <= i1 <= i2 + tol
-      isActive =
-        indicatorValue2 * (1 - tolerance / 100) <= indicatorValue1 &&
-        indicatorValue1 <= indicatorValue2 * (1 + tolerance / 100);
+      isActive = lowerBound <= indicatorValue1 && indicatorValue1 <= upperBound;
+      toleranceSign = '±';
       break;
   }
 
@@ -150,6 +173,7 @@ async function evaluateSignal(
     value2: indicatorValue2,
     isActive,
     isInverse: false,
+    toleranceSign,
   };
 }
 
@@ -253,4 +277,8 @@ function findGroupEnd(allocation: Allocation, startIndex: number): number {
     end += 1;
   }
   return end;
+}
+
+function isPercentBasedIndicator(indicator: Indicator): boolean {
+  return PERCENT_BASED_INDICATORS.has(indicator.type);
 }

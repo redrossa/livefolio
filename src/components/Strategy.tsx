@@ -8,7 +8,7 @@ import Link from 'next/link';
 import {
   formatIndicatorName,
   formatIndicatorValue,
-  formatPercent,
+  formatTolerance,
   getComparisonIconName,
 } from '@/lib/indicators';
 import { DynamicIcon } from 'lucide-react/dynamic';
@@ -130,9 +130,8 @@ export const Strategy = async ({ strategyId }: Props) => {
                         signal.indicator_2.type,
                         signal.value2,
                         signal.indicator_1.type,
-                      )}
-                      {signal.tolerance &&
-                        ` (±${formatPercent(signal.tolerance)})`}
+                      )}{' '}
+                      {formatTolerance(signal.tolerance, signal.toleranceSign)}
                     </span>
                     <small className="muted">
                       {formatIndicatorName(signal.indicator_2)}

@@ -3,6 +3,7 @@ import { ObservationSeries } from '@/lib/fred';
 import { Comparison, Indicator, IndicatorType } from '@/lib/testfolio';
 import { IconName } from 'lucide-react/dynamic';
 import { formatTicker } from '@/lib/tickers';
+import { EvaluatedSignal } from '@/lib/strategies';
 
 const yahooFinance = new YahooFinance();
 
@@ -639,4 +640,11 @@ export function getComparisonIconName(
     case '=':
       return !isInverse ? 'equal' : 'equal-not';
   }
+}
+
+export function formatTolerance(
+  value: number | null,
+  sign: EvaluatedSignal['toleranceSign'],
+) {
+  return !value ? '' : `(${sign}${formatPercent(value)})`;
 }

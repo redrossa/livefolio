@@ -21,11 +21,19 @@ import { normalizeTicker } from '@/lib/tickers';
 import { cache } from 'react';
 import { neon } from '@neondatabase/serverless';
 
-type SignalMap = Record<string, boolean>;
+type EvaluatedSignalMap = Record<string, EvaluatedSignal>;
+
+export interface EvaluatedSignal extends Signal {
+  value1: number;
+  value2: number;
+  isActive: boolean;
+  isInverse: boolean;
+}
 
 export interface EvaluatedStrategy {
   strategy: Strategy;
   allocationIndex: number;
+  activeSignals: EvaluatedSignal[];
   asOf: Date;
 }
 
@@ -59,14 +67,15 @@ export async function evaluateStrategy(
   strategy: Strategy,
 ): Promise<EvaluatedStrategy> {
   const asOf = new Date();
-  const signalMap = await createSignalMap(strategy.signals, asOf);
-  const allocationIndex = evaluateAllocationIndex(
+  const evaluatedSignalsMap = await createSignalMap(strategy.signals, asOf);
+  const { index: allocationIndex, activeSignals } = evaluateAllocations(
     strategy.allocations,
-    signalMap,
+    evaluatedSignalsMap,
   );
   return {
     strategy,
     allocationIndex,
+    activeSignals,
     asOf,
   };
 }
@@ -112,56 +121,136 @@ async function evaluateIndicator(
   }
 }
 
-async function evaluateSignal(signal: Signal, asOf: Date): Promise<boolean> {
+async function evaluateSignal(
+  signal: Signal,
+  asOf: Date,
+): Promise<EvaluatedSignal> {
   const indicatorValue1 = await evaluateIndicator(signal.indicator_1, asOf);
   const indicatorValue2 = await evaluateIndicator(signal.indicator_2, asOf);
   const tolerance = signal.tolerance ?? 0;
+  let isActive = false;
   switch (signal.comparison) {
     case '>':
-      return indicatorValue1 > indicatorValue2 * (1 + tolerance / 100);
+      isActive = indicatorValue1 > indicatorValue2 * (1 + tolerance / 100);
+      break;
     case '<':
-      return indicatorValue1 < indicatorValue2 * (1 - tolerance / 100);
+      isActive = indicatorValue1 < indicatorValue2 * (1 - tolerance / 100);
+      break;
     case '=':
       // range: i2 - tol <= i1 <= i2 + tol
-      return (
+      isActive =
         indicatorValue2 * (1 - tolerance / 100) <= indicatorValue1 &&
-        indicatorValue1 <= indicatorValue2 * (1 + tolerance / 100)
-      );
+        indicatorValue1 <= indicatorValue2 * (1 + tolerance / 100);
+      break;
   }
+
+  return {
+    ...signal,
+    value1: indicatorValue1,
+    value2: indicatorValue2,
+    isActive,
+    isInverse: false,
+  };
 }
 
 async function createSignalMap(
   signals: Signal[],
   asOf: Date,
-): Promise<SignalMap> {
-  return Object.fromEntries(
-    await Promise.all(
-      signals.map(async (s) => [s.name, await evaluateSignal(s, asOf)]),
-    ),
+): Promise<EvaluatedSignalMap> {
+  const entries = await Promise.all(
+    signals.map(async (signal) => {
+      const evaluated = await evaluateSignal(signal, asOf);
+      return [signal.name, evaluated] as const;
+    }),
   );
+  return Object.fromEntries(entries);
 }
 
-function evaluateAllocationIndex(
+function evaluateAllocations(
   allocations: Allocation[],
-  signalMap: SignalMap,
-): number {
-  const index = allocations.findIndex((a) => {
-    const signalValues = a.signals.map((k) => signalMap[k]);
-    const condInverted = signalValues.map((v, i) => (a.nots[i] ? !v : v));
+  evaluatedSignals: EvaluatedSignalMap,
+): { index: number; activeSignals: EvaluatedSignal[] } {
+  if (allocations.length === 0) {
+    throw new Error('Strategy must include at least one allocation');
+  }
 
-    // Step 1: resolve all ANDs first
-    const reduced: boolean[] = [condInverted[0]];
-    for (let i = 0; i < a.ops.length; i++) {
-      if (a.ops[i] === 'AND') {
-        const last = reduced.pop()!;
-        reduced.push(last && condInverted[i + 1]); // multiply for AND
-      } else {
-        reduced.push(condInverted[i + 1]);
-      }
+  for (let i = 0; i < allocations.length; i++) {
+    const allocation = allocations[i];
+    const { matches, activeSignals } = evaluateAllocation(
+      allocation,
+      evaluatedSignals,
+    );
+    if (matches) {
+      return { index: i, activeSignals };
     }
+  }
 
-    // Step 2: Evaluate remaining ORs left to right
-    return reduced.some(Boolean);
-  });
-  return index >= 0 ? index : allocations.length - 1; // last allocation is the "else" condition
+  // fall back to the final allocation when no earlier rules match ("else" case)
+  return { index: allocations.length - 1, activeSignals: [] };
+}
+
+function evaluateAllocation(
+  allocation: Allocation,
+  evaluatedSignals: EvaluatedSignalMap,
+): { matches: boolean; activeSignals: EvaluatedSignal[] } {
+  if (!allocation.signals.length) {
+    return { matches: true, activeSignals: [] };
+  }
+
+  let cursor = 0;
+  while (cursor < allocation.signals.length) {
+    const {
+      matches: groupMatches,
+      activeSignals,
+      nextIndex,
+    } = evaluateAndGroup(allocation, evaluatedSignals, cursor);
+    if (groupMatches) {
+      return { matches: true, activeSignals };
+    }
+    cursor = nextIndex;
+  }
+
+  return { matches: false, activeSignals: [] };
+}
+
+function evaluateAndGroup(
+  allocation: Allocation,
+  evaluatedSignals: EvaluatedSignalMap,
+  startIndex: number,
+): {
+  matches: boolean;
+  activeSignals: EvaluatedSignal[];
+  nextIndex: number;
+} {
+  const groupEnd = findGroupEnd(allocation, startIndex);
+  const activeSignals: EvaluatedSignal[] = [];
+
+  for (let idx = startIndex; idx <= groupEnd; idx++) {
+    const signalName = allocation.signals[idx];
+    const evaluatedSignal = evaluatedSignals[signalName];
+    if (!evaluatedSignal) {
+      return { matches: false, activeSignals: [], nextIndex: groupEnd + 1 };
+    }
+    const notFlag = allocation.nots[idx] ?? false;
+    const conditionActive = notFlag
+      ? !evaluatedSignal.isActive
+      : evaluatedSignal.isActive;
+    if (!conditionActive) {
+      return { matches: false, activeSignals: [], nextIndex: groupEnd + 1 };
+    }
+    activeSignals.push({
+      ...evaluatedSignal,
+      isInverse: notFlag,
+    });
+  }
+
+  return { matches: true, activeSignals, nextIndex: groupEnd + 1 };
+}
+
+function findGroupEnd(allocation: Allocation, startIndex: number): number {
+  let end = startIndex;
+  while (end < allocation.ops.length && allocation.ops[end] === 'AND') {
+    end += 1;
+  }
+  return end;
 }

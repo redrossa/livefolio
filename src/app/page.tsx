@@ -7,11 +7,18 @@ import {
 import { formatTicker } from '@/lib/tickers';
 import Link from 'next/link';
 import { Metadata, ResolvingMetadata } from 'next';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ShareButton from '@/components/ShareButton';
 import VisitTestfolioButton from '@/components/VisitTestfolioButton';
 import Subscribe from '@/components/Subscribe';
 import ClientTimeFormat from '@/components/ClientTimeFormat';
+import {
+  formatIndicatorName,
+  formatIndicatorValue,
+  formatPercent,
+  getComparisonIconName,
+} from '@/lib/indicators';
+import { DynamicIcon } from 'lucide-react/dynamic';
 
 interface Props {
   searchParams: Promise<{ s?: string }>;
@@ -104,6 +111,59 @@ export default async function Home({ searchParams }: Readonly<Props>) {
           </Link>
           .
         </p>
+      </section>
+      <section>
+        <h3>Activating signals</h3>
+        {evaluated.activeSignals.length === 0 ? (
+          <p>No signals satisfied this allocation.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            {evaluated.activeSignals.map((signal) => (
+              <Card key={signal.name}>
+                <CardHeader className="gap-0">
+                  <p className="muted">Signal</p>
+                  <CardTitle>
+                    {signal.name}
+                    {signal.isInverse && ' (inversed)'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex items-center gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-3xl">
+                      {formatIndicatorValue(
+                        signal.indicator_1.type,
+                        signal.value1,
+                      )}
+                    </span>
+                    <small className="muted">
+                      {formatIndicatorName(signal.indicator_1)}
+                    </small>
+                  </div>
+                  <DynamicIcon
+                    name={getComparisonIconName(
+                      signal.comparison,
+                      signal.isInverse,
+                    )}
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-3xl">
+                      {formatIndicatorValue(
+                        signal.indicator_2.type,
+                        signal.value2,
+                        signal.indicator_1.type,
+                      )}
+                      {signal.tolerance &&
+                        ` (±${formatPercent(signal.tolerance)})`}
+                    </span>
+                    <small className="muted">
+                      {formatIndicatorName(signal.indicator_2)}
+                    </small>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </section>
       <section>
         <Subscribe strategyId={strategyId} />

@@ -145,7 +145,10 @@ export const Strategy = async ({ strategyId }: Props) => {
         )}
       </section>
       <section>
-        <Subscribe strategyId={strategyId} />
+        <Subscribe
+          strategyId={strategyId}
+          strategyName={evaluated.strategy.name}
+        />
       </section>
     </div>
   );

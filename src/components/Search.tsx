@@ -87,7 +87,7 @@ export default function Search() {
             placeholder="https://testfol.io/tactical?s=..."
             aria-invalid={!!error}
           />
-          <Button type="submit" variant="outline" size="icon">
+          <Button type="submit" variant="ghost" size="icon">
             <SendHorizontal />
           </Button>
         </div>

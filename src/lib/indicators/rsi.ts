@@ -1,0 +1,26 @@
+import { delayDate } from '@/lib/market/dates';
+import { fetchSeries } from '@/lib/series';
+import { absoluteChanges, smoothing } from '@/lib/indicators/utils';
+
+export default async function rsi(
+  ticker: string,
+  date: string,
+  length: number,
+  delay = 0,
+): Promise<number> {
+  const delayed = delayDate(date, delay);
+  const series = await fetchSeries(ticker, delayed, null);
+
+  const returns = absoluteChanges(series.map((p) => p.value));
+  const gains = returns.map((delta) => (delta >= 0 ? delta : 0));
+  const losses = returns.map((delta) => (delta < 0 ? -delta : 0));
+
+  const k = 1 / length;
+  const avgGain = smoothing(gains, length, k);
+  const avgLoss = smoothing(losses, length, k);
+
+  const rs = avgGain / avgLoss;
+  const rsi = 100 - 100 / (1 + rs);
+
+  return rsi;
+}

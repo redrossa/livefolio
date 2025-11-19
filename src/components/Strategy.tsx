@@ -12,6 +12,7 @@ import {
 } from '@/lib/evaluators';
 import { getStrategy } from '@/lib/testfolio';
 import { ChevronLeft, ChevronRight, Equal, EqualNot } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface Props {
   strategyId: string;
@@ -26,8 +27,6 @@ export const Strategy = async ({ strategyId }: Props) => {
     console.error((e as Error).message);
     return <p>Something went wrong evaluating this strategy.</p>;
   }
-
-  console.log(evaluated.date);
 
   return (
     <div className="space-y-6">
@@ -89,24 +88,33 @@ export const StrategySkeleton = () => (
   </section>
 );
 
-export const StrategyAllocation = ({
-  allocation,
-}: {
-  allocation: Allocation;
-}) => (
+const StrategyAllocation = ({ allocation }: { allocation: Allocation }) => (
   <Card className="mt-6 rounded-md">
     <CardHeader className="gap-0">
       <p className="muted">Allocation</p>
-      <h3 className="mt-0">{allocation.name}</h3>
+      <div className="flex items-center gap-2 text-lg overflow-hidden">
+        <h3 className="mt-0 truncate">{allocation.name}</h3>
+        {allocation.change && (
+          <StrategyPercentChange value={allocation.change} />
+        )}
+      </div>
     </CardHeader>
     <CardContent>
-      <div className="grid grid-cols-2 gap-4 text-lg">
-        <span className="large">Holdings</span>
-        <span className="large">Distributions</span>
-        {allocation.holdings.map(({ ticker, distribution }, i) => (
+      <div className="grid grid-cols-3 gap-4 text-lg">
+        <span className="font-bold md:text-base text-sm">Holdings</span>
+        <span className="font-bold md:text-base text-sm">Distributions</span>
+        <span className="font-bold md:text-base text-sm">
+          Today&#39;s returns
+        </span>
+        {allocation.holdings.map(({ ticker, distribution, change }, i) => (
           <Fragment key={`${ticker.display}-${i}`}>
             <span className="small">{ticker.display}</span>
-            <span className="small">{distribution}%</span>
+            <span className="small">
+              {percentFormatter.format(distribution)}
+            </span>
+            <span className="small">
+              {change && <StrategyPercentChange value={change} />}
+            </span>
           </Fragment>
         ))}
       </div>
@@ -114,7 +122,7 @@ export const StrategyAllocation = ({
   </Card>
 );
 
-export const StrategySignal = ({ signal }: { signal: Signal }) => {
+const StrategySignal = ({ signal }: { signal: Signal }) => {
   const isInversed = !signal.isTrue;
 
   let Comparison;
@@ -155,7 +163,7 @@ export const StrategySignal = ({ signal }: { signal: Signal }) => {
   );
 };
 
-export const StrategyIndicator = ({
+const StrategyIndicator = ({
   indicator,
   tolerance,
 }: {
@@ -193,6 +201,20 @@ export const StrategyIndicator = ({
   );
 };
 
+const StrategyPercentChange = ({ value }: { value: number }) => {
+  return (
+    <Badge
+      className={
+        value < 0
+          ? 'bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive border-none focus-visible:outline-none text-[0.75em]'
+          : 'border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5 text-[0.75em]'
+      }
+    >
+      {percentReturnsFormatter.format(value)}
+    </Badge>
+  );
+};
+
 const dollarFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
@@ -204,4 +226,10 @@ const percentFormatter = new Intl.NumberFormat('en-US', {
   unitDisplay: 'narrow',
   minimumFractionDigits: 0,
   maximumFractionDigits: 2,
+});
+
+const percentReturnsFormatter = new Intl.NumberFormat('en-US', {
+  ...percentFormatter.resolvedOptions(),
+  minimumFractionDigits: 2,
+  signDisplay: 'exceptZero',
 });

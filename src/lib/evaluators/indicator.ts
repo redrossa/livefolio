@@ -63,7 +63,6 @@ export async function evalIndicator(
       break;
     case 'Volatility':
       value = await volatility(symbol, date, lookback, delay);
-      unit = '%';
       break;
     case 'Drawdown':
       value = await drawdown(symbol, date, delay);

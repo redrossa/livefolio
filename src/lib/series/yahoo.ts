@@ -26,3 +26,7 @@ export default async function fetchYahooSeries(
     value: q.close ?? 0,
   }));
 }
+
+export async function fetchYahooQuote(ticker: string) {
+  return yahooFinance.quote(ticker);
+}

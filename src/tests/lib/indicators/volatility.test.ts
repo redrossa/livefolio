@@ -1,0 +1,14 @@
+import { mockFetchSeries } from '@/tests/lib/indicators/fixtures';
+import { describe, expect, it } from 'vitest';
+import { volatility } from '@/lib/indicators';
+
+describe('Volatility Indicator', () => {
+  const date = '2024-12-31';
+
+  it('should return the volatility of SPY at specified date from a 200 day period', async () => {
+    const result = await volatility('SPY', date, 200);
+
+    expect(mockFetchSeries).toHaveBeenCalledWith('SPY', date, 201);
+    expect(result).toBeCloseTo(0.12819227952131151, 6);
+  });
+});

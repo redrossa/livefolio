@@ -1,5 +1,6 @@
 import { Strategy as TestfolioStrategy } from '@/lib/testfolio';
 import { Allocation, evalAllocation } from '@/lib/evaluators/allocation';
+import type { Signal } from '@/lib/evaluators/signal';
 import { toUSMarketDateString } from '@/lib/market/dates';
 
 export interface Strategy {
@@ -15,22 +16,34 @@ export async function evalStrategy(
 ): Promise<Strategy> {
   const date = toUSMarketDateString(new Date());
 
-  let { allocation, evaluatedSignals } = await evalAllocation(
-    strategy.allocations[strategy.allocations.length - 1],
-    [],
-    date,
-  );
+  if (!strategy.allocations.length) {
+    throw new Error('Strategy must include at least one allocation.');
+  }
 
-  for (const a of strategy.allocations) {
-    const result = await evalAllocation(a, strategy.signals, date, {
-      cachedSignals: evaluatedSignals,
-    });
+  let evaluatedSignals: Record<string, Signal> = {};
+  let allocation: Allocation | null = null;
+
+  for (const allocationDefinition of strategy.allocations) {
+    const result = await evalAllocation(
+      allocationDefinition,
+      strategy.signals,
+      date,
+      { cachedSignals: evaluatedSignals },
+    );
+
     allocation = result.allocation;
     evaluatedSignals = result.evaluatedSignals;
 
-    if (allocation.signals.length > 0) {
+    if (
+      allocationDefinition.signals.length === 0 ||
+      allocation.signals.length > 0
+    ) {
       break;
     }
+  }
+
+  if (!allocation) {
+    throw new Error('Failed to evaluate strategy allocations.');
   }
 
   return {

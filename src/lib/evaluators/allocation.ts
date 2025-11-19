@@ -30,26 +30,48 @@ export async function evalAllocation(
   date: string,
   options?: EvalAllocationOptions,
 ): Promise<EvalAllocationResult> {
-  const filteredSignals: TestfolioSignal[] = signals.filter((s) =>
-    allocation.signals.includes(s.name),
-  );
-  const evaluatedSignals: Signal[] = await Promise.all(
-    filteredSignals.map(
-      async (s) =>
-        options?.cachedSignals[s.name] ?? (await evalSignal(s, date)),
-    ),
+  const cachedSignals: Record<string, Signal> = {
+    ...(options?.cachedSignals ?? {}),
+  };
+  const signalDefinitions = new Map<string, TestfolioSignal>(
+    signals.map((s) => [s.name, s]),
   );
 
-  const signalMap = Object.fromEntries(
-    evaluatedSignals.map((s) => [s.name, s]),
+  const hasCachedSignal = (name: string): boolean =>
+    Object.hasOwn(cachedSignals, name);
+
+  const missingSignalNames = Array.from(
+    new Set(allocation.signals.filter((name) => !hasCachedSignal(name))),
   );
 
-  const terms = evaluatedSignals.map(
-    (s): Term => ({
-      name: s.name,
-      value: s.isTrue,
-    }),
-  );
+  if (missingSignalNames.length > 0) {
+    const missingSignals = await Promise.all(
+      missingSignalNames.map((name) => {
+        const definition = signalDefinitions.get(name);
+        if (!definition) {
+          throw new Error(`Missing definition for signal "${name}".`);
+        }
+
+        return evalSignal(definition, date);
+      }),
+    );
+
+    missingSignalNames.forEach((name, index) => {
+      cachedSignals[name] = missingSignals[index];
+    });
+  }
+
+  const terms: Term[] = allocation.signals.map((name) => {
+    const signal = cachedSignals[name];
+    if (!signal) {
+      throw new Error(`Missing evaluation result for signal "${name}".`);
+    }
+
+    return {
+      name,
+      value: signal.isTrue,
+    };
+  });
 
   const short = getShortCircuitedTrueTerms(
     terms,
@@ -63,12 +85,14 @@ export async function evalAllocation(
       ticker: evalTicker(t.ticker),
       distribution: t.percent,
     })),
-    signals: short.map(({ name }) => signalMap[name]),
+    signals: short
+      .map(({ name }) => cachedSignals[name])
+      .filter((signal): signal is Signal => Boolean(signal)),
   };
 
   return {
     allocation: evaluated,
-    evaluatedSignals: signalMap,
+    evaluatedSignals: cachedSignals,
   };
 }
 
@@ -82,26 +106,19 @@ function getShortCircuitedTrueTerms(
   O: Operation[],
   N: boolean[],
 ): Term[] {
-  const trueTerms: Term[] = [];
-
-  // index: start of current AND-group
   let index = 0;
 
   while (index < A.length) {
-    // 1. Find the end of this AND-group.
-    //    Group is [index .. end], where all operators between them are AND.
     let end = index;
     while (end < A.length - 1 && O[end] === 'AND') {
       end++;
     }
 
-    // 2. Evaluate group [index .. end] with AND + short-circuit.
+    const groupTerms: Term[] = [];
     let groupIsTrue = true;
 
     for (let j = index; j <= end; j++) {
       if (!groupIsTrue) {
-        // Once group is already false, rest of terms in this AND-chain
-        // are not evaluated.
         break;
       }
 
@@ -109,22 +126,18 @@ function getShortCircuitedTrueTerms(
       const effectiveValue = N[j] ? !baseValue : baseValue;
 
       if (effectiveValue) {
-        // This term was evaluated and true.
-        trueTerms.push(A[j]);
+        groupTerms.push(A[j]);
       } else {
-        // AND short-circuit: group becomes false, rest of terms not evaluated.
         groupIsTrue = false;
       }
     }
 
-    // 3. OR short-circuit: if a whole group is true, stop.
     if (groupIsTrue) {
-      break;
+      return groupTerms;
     }
 
-    // 4. Move to next group after this OR boundary.
     index = end + 1;
   }
 
-  return trueTerms;
+  return [];
 }

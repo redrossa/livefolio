@@ -14,5 +14,5 @@ export default async function volatility(
   const meanReturns = mean(returns);
   const variance = mean(returns.map((x) => Math.pow(x - meanReturns, 2)));
   const sd = Math.sqrt(variance);
-  return sd * Math.sqrt(252);
+  return sd * Math.sqrt(252) * 100;
 }

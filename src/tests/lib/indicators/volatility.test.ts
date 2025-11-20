@@ -9,6 +9,6 @@ describe('Volatility Indicator', () => {
     const result = await volatility('SPY', date, 200);
 
     expect(mockFetchSeries).toHaveBeenCalledWith('SPY', date, 201);
-    expect(result).toBeCloseTo(0.12819227952131151, 6);
+    expect(result).toBeCloseTo(12.819227952131151, 6);
   });
 });

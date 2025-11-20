@@ -13,6 +13,7 @@ import {
 import { getStrategy } from '@/lib/testfolio';
 import { ChevronLeft, ChevronRight, Equal, EqualNot } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { clsx } from 'clsx';
 
 interface Props {
   strategyId: string;
@@ -29,7 +30,7 @@ export const Strategy = async ({ strategyId }: Props) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <section>
         <p className="muted">Strategy</p>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
@@ -55,7 +56,7 @@ export const Strategy = async ({ strategyId }: Props) => {
         {evaluated.allocation.signals.length === 0 ? (
           <p>No signals satisfied this allocation.</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             {evaluated.allocation.signals.map((signal, index) => (
               <StrategySignal signal={signal} key={`${signal.name}-${index}`} />
             ))}
@@ -72,10 +73,10 @@ export const Strategy = async ({ strategyId }: Props) => {
 export const StrategySkeleton = () => (
   <section>
     <div className="animate-pulse bg-secondary rounded-full h-3.5 w-1/4" />
-    <div className="animate-pulse bg-secondary rounded-full h-9 w-1/2 mt-3" />
-    <div className="animate-pulse bg-secondary rounded-xl h-48 w-full mt-6" />
-    <div className="animate-pulse bg-secondary rounded-full h-6 w-1/2 mt-6" />
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+    <div className="animate-pulse bg-secondary rounded-full h-9 w-1/2 mt-4" />
+    <div className="animate-pulse bg-secondary rounded-xl h-48 w-full mt-8" />
+    <div className="animate-pulse bg-secondary rounded-full h-9 w-1/2 mt-8" />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
       <div className="animate-pulse bg-secondary rounded-xl h-48" />
       <div className="animate-pulse bg-secondary rounded-xl h-48" />
       <div className="animate-pulse bg-secondary rounded-xl h-48" />
@@ -89,32 +90,30 @@ export const StrategySkeleton = () => (
 );
 
 const StrategyAllocation = ({ allocation }: { allocation: Allocation }) => (
-  <Card className="mt-6 rounded-md">
-    <CardHeader className="gap-0">
+  <Card className="mt-4 rounded-md">
+    <CardHeader className="gap-0 border-b border-solid border-border pb-3">
       <p className="muted">Allocation</p>
-      <div className="flex items-center gap-2 text-lg overflow-hidden">
+      <div className="flex items-center justify-between md:justify-start gap-2 overflow-hidden">
         <h3 className="mt-0 truncate">{allocation.name}</h3>
-        {allocation.change && (
-          <StrategyPercentChange value={allocation.change} />
-        )}
+        <StrategyPercentChange value={allocation.change} />
       </div>
     </CardHeader>
     <CardContent>
       <div className="grid grid-cols-3 gap-4 text-lg">
-        <span className="font-bold md:text-base text-sm">Holdings</span>
-        <span className="font-bold md:text-base text-sm">Distributions</span>
-        <span className="font-bold md:text-base text-sm">
-          Today&#39;s returns
-        </span>
+        <div className="font-bold text-base hidden md:block">Holdings</div>
+        <div className="font-bold text-base hidden md:block">Distributions</div>
+        <div className="font-bold text-base hidden md:block justify-self-end md:justify-self-auto text-right md:text-left">
+          Today&#39;s Returns
+        </div>
         {allocation.holdings.map(({ ticker, distribution, change }, i) => (
           <Fragment key={`${ticker.display}-${i}`}>
-            <span className="small">{ticker.display}</span>
-            <span className="small">
+            <div className="truncate">{ticker.display}</div>
+            <div className="truncate justify-self-center md:justify-self-auto">
               {percentFormatter.format(distribution)}
-            </span>
-            <span className="small">
-              {change && <StrategyPercentChange value={change} />}
-            </span>
+            </div>
+            <div className="justify-self-end md:justify-self-auto">
+              <StrategyPercentChange value={change} />
+            </div>
           </Fragment>
         ))}
       </div>
@@ -146,12 +145,14 @@ const StrategySignal = ({ signal }: { signal: Signal }) => {
     <Card key={signal.name}>
       <CardHeader className="gap-0">
         <p className="muted">Signal</p>
-        <CardTitle>
-          {signal.name}
-          {isInversed && ' (inversed)'}
+        <CardTitle className="overflow-hidden">
+          <div className="truncate">
+            {signal.name}
+            {isInversed && ' (inversed)'}
+          </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex items-center gap-4">
+      <CardContent className="flex items-center gap-1 md:gap-4">
         <StrategyIndicator indicator={signal.indicator1} />
         <Comparison />
         <StrategyIndicator
@@ -201,16 +202,18 @@ const StrategyIndicator = ({
   );
 };
 
-const StrategyPercentChange = ({ value }: { value: number }) => {
+const StrategyPercentChange = ({ value }: { value: number | null }) => {
   return (
     <Badge
-      className={
-        value < 0
-          ? 'bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive border-none focus-visible:outline-none text-[0.75em]'
-          : 'border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5 text-[0.75em]'
-      }
+      variant="secondary"
+      className={clsx(
+        value &&
+          (value < 0
+            ? 'bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive border-none focus-visible:outline-none'
+            : 'border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5'),
+      )}
     >
-      {percentReturnsFormatter.format(value)}
+      {value == null ? String(NaN) : percentReturnsFormatter.format(value)}
     </Badge>
   );
 };

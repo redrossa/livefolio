@@ -89,7 +89,8 @@ export async function evalAllocation(
       let change: number | null;
       try {
         const quote = await fetchYahooQuote(ticker.symbol);
-        change = quote?.regularMarketChangePercent as number;
+        change =
+          (quote?.regularMarketChangePercent as number) * ticker.leverage;
         allocationChange ??= 0;
         allocationChange += change * (t.percent / 100);
       } catch {

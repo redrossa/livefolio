@@ -13,6 +13,7 @@ import {
 import { getStrategy } from '@/lib/testfolio';
 import { ChevronLeft, ChevronRight, Equal, EqualNot } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { clsx } from 'clsx';
 
 interface Props {
   strategyId: string;
@@ -94,9 +95,7 @@ const StrategyAllocation = ({ allocation }: { allocation: Allocation }) => (
       <p className="muted">Allocation</p>
       <div className="flex items-center justify-between md:justify-start gap-2 overflow-hidden">
         <h3 className="mt-0 truncate">{allocation.name}</h3>
-        {allocation.change != null && (
-          <StrategyPercentChange value={allocation.change} />
-        )}
+        <StrategyPercentChange value={allocation.change} />
       </div>
     </CardHeader>
     <CardContent>
@@ -113,7 +112,7 @@ const StrategyAllocation = ({ allocation }: { allocation: Allocation }) => (
               {percentFormatter.format(distribution)}
             </div>
             <div className="justify-self-end md:justify-self-auto">
-              {change != null && <StrategyPercentChange value={change} />}
+              <StrategyPercentChange value={change} />
             </div>
           </Fragment>
         ))}
@@ -206,13 +205,15 @@ const StrategyIndicator = ({
 const StrategyPercentChange = ({ value }: { value: number | null }) => {
   return (
     <Badge
-      className={
-        value && value < 0
-          ? 'bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive border-none focus-visible:outline-none'
-          : 'border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5'
-      }
+      variant="secondary"
+      className={clsx(
+        value &&
+          (value < 0
+            ? 'bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive border-none focus-visible:outline-none'
+            : 'border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5'),
+      )}
     >
-      {value == null ? NaN : percentReturnsFormatter.format(value)}
+      {value == null ? String(NaN) : percentReturnsFormatter.format(value)}
     </Badge>
   );
 };

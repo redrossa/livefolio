@@ -9,7 +9,7 @@ import { fetchYahooQuote } from '@/lib/series/yahoo';
 
 export interface Allocation {
   name: string;
-  change: number | null;
+  change: number;
   holdings: Array<{
     ticker: Ticker;
     distribution: number;
@@ -82,17 +82,16 @@ export async function evalAllocation(
     allocation.nots,
   );
 
-  let allocationChange: number | null = null;
+  let allocationChange: number = 0;
   const holdings = await Promise.all(
     allocation.tickers.map(async (t) => {
       const ticker = evalTicker(t.ticker);
       let change: number | null;
       try {
         const quote = await fetchYahooQuote(ticker.symbol);
-        change =
-          (quote?.regularMarketChangePercent as number) * ticker.leverage;
-        allocationChange ??= 0;
-        allocationChange += change * (t.percent / 100);
+        const marketReturn = quote?.regularMarketChangePercent;
+        change = marketReturn == null ? null : marketReturn * ticker.leverage;
+        allocationChange += (change ?? 0) * (t.percent / 100);
       } catch {
         change = null;
       }

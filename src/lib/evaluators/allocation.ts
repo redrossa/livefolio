@@ -4,7 +4,7 @@ import {
   Signal as TestfolioSignal,
 } from '@/lib/testfolio';
 import { evalTicker, Ticker } from '@/lib/evaluators/ticker';
-import { evalSignal, Signal, EvalSignalOptions } from '@/lib/evaluators/signal';
+import { evalSignal, Signal } from '@/lib/evaluators/signal';
 import { fetchYahooQuote } from '@/lib/series/yahoo';
 
 export interface Allocation {
@@ -20,7 +20,6 @@ export interface Allocation {
 
 export interface EvalAllocationOptions {
   cachedSignals: Record<string, Signal>;
-  indicatorOptions?: EvalSignalOptions['indicatorOptions'];
 }
 
 export interface EvalAllocationResult {
@@ -56,9 +55,7 @@ export async function evalAllocation(
           throw new Error(`Missing definition for signal "${name}".`);
         }
 
-        return evalSignal(definition, date, {
-          indicatorOptions: options?.indicatorOptions,
-        });
+        return evalSignal(definition, date);
       }),
     );
 

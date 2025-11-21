@@ -1,7 +1,6 @@
 import { Strategy as TestfolioStrategy } from '@/lib/testfolio';
 import { Allocation, evalAllocation } from '@/lib/evaluators/allocation';
 import type { Signal } from '@/lib/evaluators/signal';
-import type { EvalIndicatorOptions } from '@/lib/evaluators/indicator';
 import { toUSMarketDateString } from '@/lib/market/dates';
 
 export interface Strategy {
@@ -11,14 +10,9 @@ export interface Strategy {
   allocation: Allocation;
 }
 
-export interface EvalStrategyOptions {
-  indicatorOptions?: EvalIndicatorOptions;
-}
-
 export async function evalStrategy(
   strategy: TestfolioStrategy,
   id: string,
-  options?: EvalStrategyOptions,
 ): Promise<Strategy> {
   const date = toUSMarketDateString(new Date());
 
@@ -34,10 +28,7 @@ export async function evalStrategy(
       allocationDefinition,
       strategy.signals,
       date,
-      {
-        cachedSignals: evaluatedSignals,
-        indicatorOptions: options?.indicatorOptions,
-      },
+      { cachedSignals: evaluatedSignals },
     );
 
     allocation = result.allocation;

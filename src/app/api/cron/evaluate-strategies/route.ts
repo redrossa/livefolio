@@ -1,62 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { randomUUID } from 'crypto';
 import ReallocationEmail from '@/components/ReallocationEmail';
 import { getLatestStrategyEvaluation, insertStrategyEvaluation } from '@/lib/database/evaluation';
 import { getStrategiesWithSubscribers } from '@/lib/database/strategy';
 import { evalStrategy, Allocation } from '@/lib/evaluators';
-import type { Indicator, IndicatorCache } from '@/lib/evaluators/indicator';
 import { sendEmail } from '@/lib/email';
-import { getRedisClient } from '@/lib/redis';
 
 export const runtime = 'nodejs';
-
-class JobIndicatorCache implements IndicatorCache {
-  private readonly keys = new Set<string>();
-
-  constructor(private readonly client: ReturnType<typeof getRedisClient>) {}
-
-  async get(key: string): Promise<Indicator | null> {
-    if (!this.client) {
-      return null;
-    }
-
-    try {
-      const cached = await this.client.get(key);
-      return cached ? (JSON.parse(cached) as Indicator) : null;
-    } catch (error) {
-      console.error('Failed to read indicator cache', error);
-      return null;
-    }
-  }
-
-  async set(key: string, indicator: Indicator): Promise<void> {
-    if (!this.client) {
-      return;
-    }
-
-    try {
-      await this.client.set(key, JSON.stringify(indicator));
-    } catch (error) {
-      console.error('Failed to write indicator cache', error);
-    }
-  }
-
-  trackKey(key: string): void {
-    this.keys.add(key);
-  }
-
-  async clear(): Promise<void> {
-    if (!this.client || this.keys.size === 0) {
-      return;
-    }
-
-    try {
-      await this.client.del(Array.from(this.keys));
-    } catch (error) {
-      console.error('Failed to clear indicator cache', error);
-    }
-  }
-}
 
 function allocationsDiffer(a: Allocation, b: Allocation): boolean {
   if (a.name !== b.name) {
@@ -121,10 +70,6 @@ export async function GET(request: NextRequest) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  const redisClient = getRedisClient();
-  const cachePrefix = `indicator:${randomUUID()}`;
-  const indicatorCache = new JobIndicatorCache(redisClient);
-
   try {
     const strategies = await getStrategiesWithSubscribers();
     if (!strategies.length) {
@@ -133,12 +78,10 @@ export async function GET(request: NextRequest) {
 
     let reallocatedCount = 0;
     for (const strategy of strategies) {
-      const evaluated = await evalStrategy(strategy.definition, strategy.testfolio_id, {
-        indicatorOptions: {
-          cache: indicatorCache,
-          cacheKeyPrefix: cachePrefix,
-        },
-      });
+      const evaluated = await evalStrategy(
+        strategy.definition,
+        strategy.testfolio_id,
+      );
 
       const previous = await getLatestStrategyEvaluation(strategy.id);
       const hasReallocation = previous
@@ -167,7 +110,5 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Failed to run strategy evaluation cron', error);
     return new NextResponse('Internal Server Error', { status: 500 });
-  } finally {
-    await indicatorCache.clear();
   }
 }

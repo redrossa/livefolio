@@ -122,7 +122,6 @@ describe('evalStrategy', () => {
     expect(mockEvalAllocation).toHaveBeenCalledTimes(2);
     expect(mockEvalAllocation.mock.calls[1]?.[3]).toMatchObject({
       cachedSignals: firstResultSignals,
-      indicatorOptions: undefined,
     });
   });
 

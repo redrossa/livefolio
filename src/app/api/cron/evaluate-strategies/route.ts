@@ -30,36 +30,15 @@ function allocationsDiffer(a: Allocation, b: Allocation): boolean {
   for (let i = 0; i < aHoldings.length; i++) {
     const left = aHoldings[i];
     const right = bHoldings[i];
-    if (left.symbol !== right.symbol || left.distribution !== right.distribution) {
+    if (
+      left.symbol !== right.symbol ||
+      left.distribution !== right.distribution
+    ) {
       return true;
     }
   }
 
   return false;
-}
-
-async function sendAllocationUpdate(
-  subscribers: string[],
-  strategyName: string,
-  strategyId: string,
-  allocation: Allocation,
-  evaluationDate: string,
-) {
-  const uniqueSubscribers = Array.from(new Set(subscribers));
-  await Promise.all(
-    uniqueSubscribers.map((email) =>
-      sendEmail(
-        email,
-        `${strategyName} allocation updated`,
-        <ReallocationEmail
-          allocation={allocation}
-          evaluationDate={evaluationDate}
-          strategyId={strategyId}
-          strategyName={strategyName}
-        />,
-      ),
-    ),
-  );
 }
 
 export async function GET(request: NextRequest) {
@@ -86,7 +65,7 @@ export async function GET(request: NextRequest) {
       const previous = await getLatestStrategyEvaluation(strategy.id);
       const hasReallocation = previous
         ? allocationsDiffer(previous.allocation, evaluated.allocation)
-        : true;
+        : false;
 
       await insertStrategyEvaluation(
         strategy.id,
@@ -96,17 +75,25 @@ export async function GET(request: NextRequest) {
 
       if (hasReallocation) {
         reallocatedCount++;
-        await sendAllocationUpdate(
-          strategy.subscribers,
-          evaluated.name,
-          evaluated.id,
-          evaluated.allocation,
-          evaluated.date,
-        );
+        for (const sub of strategy.subscribers) {
+          await sendEmail(
+            sub,
+            `Your subscribed strategy ${evaluated.name} switched allocation!`,
+            ReallocationEmail({
+              strategyName: evaluated.name,
+              strategyId: evaluated.id,
+              allocation: evaluated.allocation,
+              evaluationDate: evaluated.date,
+            }),
+          );
+        }
       }
     }
 
-    return NextResponse.json({ evaluated: strategies.length, reallocated: reallocatedCount });
+    return NextResponse.json({
+      evaluated: strategies.length,
+      reallocated: reallocatedCount,
+    });
   } catch (error) {
     console.error('Failed to run strategy evaluation cron', error);
     return new NextResponse('Internal Server Error', { status: 500 });

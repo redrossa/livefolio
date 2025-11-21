@@ -42,7 +42,6 @@ export async function evalIndicator(
   const symbol = ticker.symbol;
   const lookback = indicator.lookback ?? 0;
   const delay = indicator.delay ?? 0;
-
   let value: number;
   let unit: Unit = null;
   switch (type) {
@@ -105,7 +104,7 @@ export async function evalIndicator(
       value = threshold(indicator.value!);
       break;
   }
-  const evaluated: Indicator = {
+  return {
     type,
     ticker,
     value,
@@ -113,5 +112,4 @@ export async function evalIndicator(
     lookback,
     delay,
   };
-  return evaluated;
 }

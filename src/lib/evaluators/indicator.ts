@@ -33,15 +33,36 @@ export interface Indicator {
   delay: number;
 }
 
+export interface IndicatorCache {
+  get(key: string): Promise<Indicator | null>;
+  set(key: string, indicator: Indicator): Promise<void>;
+  trackKey?: (key: string) => void;
+}
+
+export interface EvalIndicatorOptions {
+  cache?: IndicatorCache;
+  cacheKeyPrefix?: string;
+}
+
 export async function evalIndicator(
   indicator: TestfolioIndicator,
   date: string,
+  options?: EvalIndicatorOptions,
 ): Promise<Indicator> {
   const type = indicator.type;
   const ticker = evalTicker(indicator.ticker);
   const symbol = ticker.symbol;
   const lookback = indicator.lookback ?? 0;
   const delay = indicator.delay ?? 0;
+  const cacheKey = buildCacheKey(indicator, date, options?.cacheKeyPrefix);
+
+  if (cacheKey && options?.cache) {
+    const cached = await options.cache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+  }
+
   let value: number;
   let unit: Unit = null;
   switch (type) {
@@ -104,7 +125,7 @@ export async function evalIndicator(
       value = threshold(indicator.value!);
       break;
   }
-  return {
+  const evaluated: Indicator = {
     type,
     ticker,
     value,
@@ -112,4 +133,24 @@ export async function evalIndicator(
     lookback,
     delay,
   };
+
+  if (cacheKey && options?.cache) {
+    await options.cache.set(cacheKey, evaluated);
+    options.cache.trackKey?.(cacheKey);
+  }
+
+  return evaluated;
+}
+
+function buildCacheKey(
+  indicator: TestfolioIndicator,
+  date: string,
+  prefix?: string,
+): string {
+  const lookback = indicator.lookback ?? 0;
+  const delay = indicator.delay ?? 0;
+  const thresholdValue = indicator.value ?? 'null';
+  const ticker = indicator.ticker ?? 'N/A';
+  const sanitizedPrefix = prefix ?? 'indicator';
+  return `${sanitizedPrefix}:${date}:${indicator.type}:${ticker}:${lookback}:${delay}:${thresholdValue}`;
 }

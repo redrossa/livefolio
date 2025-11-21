@@ -120,8 +120,9 @@ describe('evalStrategy', () => {
     expect(result.allocation.name).toBe('Balanced');
     expect(result.allocation.signals.map((s) => s?.name)).toEqual(['Fallback']);
     expect(mockEvalAllocation).toHaveBeenCalledTimes(2);
-    expect(mockEvalAllocation.mock.calls[1]?.[3]).toEqual({
+    expect(mockEvalAllocation.mock.calls[1]?.[3]).toMatchObject({
       cachedSignals: firstResultSignals,
+      indicatorOptions: undefined,
     });
   });
 

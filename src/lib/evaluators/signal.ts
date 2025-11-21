@@ -1,5 +1,9 @@
 import { Comparison, Signal as TestfolioSignal } from '@/lib/testfolio';
-import { Indicator, evalIndicator } from '@/lib/evaluators/indicator';
+import {
+  EvalIndicatorOptions,
+  Indicator,
+  evalIndicator,
+} from '@/lib/evaluators/indicator';
 
 export interface Signal {
   name: string;
@@ -10,12 +14,25 @@ export interface Signal {
   isTrue: boolean;
 }
 
+export interface EvalSignalOptions {
+  indicatorOptions?: EvalIndicatorOptions;
+}
+
 export async function evalSignal(
   signal: TestfolioSignal,
   date: string,
+  options?: EvalSignalOptions,
 ): Promise<Signal> {
-  const indicator1 = await evalIndicator(signal.indicator_1, date);
-  const indicator2 = await evalIndicator(signal.indicator_2, date);
+  const indicator1 = await evalIndicator(
+    signal.indicator_1,
+    date,
+    options?.indicatorOptions,
+  );
+  const indicator2 = await evalIndicator(
+    signal.indicator_2,
+    date,
+    options?.indicatorOptions,
+  );
 
   if (indicator2.type === 'Threshold') {
     indicator2.unit = indicator1.unit;

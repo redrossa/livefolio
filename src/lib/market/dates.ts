@@ -13,7 +13,7 @@ export function toUSMarketDateString(date: Date): string {
 export function toUTCMarketClose(date: string): Date {
   const utc = new Date(date);
   return new Date(
-    Date.UTC(utc.getFullYear(), utc.getMonth(), utc.getDate(), 14, 30),
+    Date.UTC(utc.getFullYear(), utc.getMonth(), utc.getDate(), 21, 0),
   );
 }
 
@@ -24,7 +24,7 @@ export function toUTCMarketClose(date: string): Date {
 export function toUTCMarketOpen(date: string): Date {
   const utc = new Date(date);
   return new Date(
-    Date.UTC(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate(), 21, 0),
+    Date.UTC(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate(), 14, 30),
   );
 }
 

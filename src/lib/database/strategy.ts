@@ -23,26 +23,14 @@ export async function insertStrategy(
   return !inserted.length ? null : (inserted[0] as Strategy);
 }
 
-function parseDefinition(definition: unknown): TestfolioStrategy {
-  if (typeof definition === 'string') {
-    return JSON.parse(definition) as TestfolioStrategy;
-  }
-  return definition as TestfolioStrategy;
-}
-
-export async function getStrategiesWithSubscribers(): Promise<StrategyWithSubscribers[]> {
+export async function getStrategiesWithSubscribers(): Promise<
+  StrategyWithSubscribers[]
+> {
   const result = await sql`
     SELECT s.id, s.testfolio_id, s.definition, s.date_added, ARRAY_AGG(sub.email) as subscribers
     FROM strategy s
-    INNER JOIN subscriber sub ON sub.testfolio_id = s.testfolio_id
+           INNER JOIN subscriber sub ON sub.testfolio_id = s.testfolio_id
     GROUP BY s.id
   `;
-
-  return (result as Array<Omit<StrategyWithSubscribers, 'definition'>> & {
-    definition: unknown;
-  }[]).map((row) => ({
-    ...row,
-    definition: parseDefinition(row.definition),
-    subscribers: Array.from(new Set(row.subscribers ?? [])).filter(Boolean),
-  }));
+  return result as unknown as StrategyWithSubscribers[];
 }

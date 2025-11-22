@@ -9,8 +9,9 @@ export interface Subscriber {
 export async function insertSubscriber(testfolio_id: string, email: string) {
   const inserted = await sql`
     INSERT INTO subscriber (email, testfolio_id)
-    VALUES (${email}, ${testfolio_id}) ON CONFLICT (email, testfolio_id) DO NOTHING
-      RETURNING *;
+    VALUES (${email}, ${testfolio_id})
+    ON CONFLICT (email, testfolio_id) DO NOTHING
+    RETURNING *;
   `;
   return !inserted.length ? null : (inserted[0] as Subscriber);
 }

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {
   Body,
+  Button,
   Container,
   Head,
   Heading,
@@ -14,28 +15,36 @@ import {
 import type { Allocation } from '@/lib/evaluators';
 
 interface Props {
+  subscriberName: string;
   strategyName: string;
   strategyId: string;
   evaluationDate: string;
-  allocation: Allocation;
+  currAllocation: Allocation;
+  prevAllocationName: string;
 }
 
 function formatHoldings(allocation: Allocation): string {
   return allocation.holdings
-    .map(
-      (holding) =>
-        `${holding.ticker.display}: ${holding.distribution.toFixed(2)}%`,
-    )
+    .map((holding) => `${holding.ticker.display}: ${holding.distribution}%`)
     .join(' | ');
 }
 
+const dateTimeFormat = new Intl.DateTimeFormat('en-US', {
+  weekday: 'short', // "Sat"
+  month: 'short', // "Nov"
+  day: '2-digit', // "22"
+  year: 'numeric', // "2025"
+});
+
 const ReallocationEmail = ({
+  subscriberName,
   strategyName,
   strategyId,
-  allocation,
+  currAllocation,
+  prevAllocationName,
   evaluationDate,
 }: Props) => {
-  const holdingsSummary = formatHoldings(allocation);
+  const holdingsSummary = formatHoldings(currAllocation);
   return (
     <Html>
       <Head />
@@ -46,27 +55,27 @@ const ReallocationEmail = ({
             <Heading as="h1" className="mx-auto font-bold">
               Livefol.io
             </Heading>
+            <Text className="text-base leading-6">Hi {subscriberName},</Text>
             <Text className="text-base leading-6">
-              The allocation for <strong>{strategyName}</strong> changed based on
-              the latest market close signals on {evaluationDate}.
+              The allocation for <strong>{strategyName}</strong> just changed
+              based on the latest market close signals on{' '}
+              {dateTimeFormat.format(new Date(evaluationDate))}.
             </Text>
             <Text className="text-base leading-6">
-              New allocation: <strong>{allocation.name}</strong>.
+              New allocation: <strong>{currAllocation.name}</strong>
             </Text>
-            <Section className="mt-4">
-              <Text className="text-base leading-6">Holdings</Text>
-              <Text className="text-base leading-6">{holdingsSummary}</Text>
-            </Section>
-            <Text className="text-base leading-6 mt-4">
-              You can review the full strategy details at any time:
+            <Text className="text-base leading-6">Holdings:</Text>
+            <Text className="text-base leading-6">{holdingsSummary}</Text>
+            <Text className="text-base leading-6">
+              Previous allocation: {prevAllocationName}
             </Text>
-            <Section className="mt-2">
-              <a
-                className="text-base text-zinc-900 underline"
+            <Section className="text-center">
+              <Button
+                className="bg-zinc-900 rounded-sm text-white text-base no-underline text-center block p-3"
                 href={`https://livefol.io?s=${strategyId}`}
               >
-                Open strategy
-              </a>
+                View strategy
+              </Button>
             </Section>
             <Text className="text-base leading-6 mt-6">
               Best,

@@ -1,45 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ReallocationEmail from '@/components/ReallocationEmail';
-import { getLatestStrategyEvaluation, insertStrategyEvaluation } from '@/lib/database/evaluation';
 import { getStrategiesWithSubscribers } from '@/lib/database/strategy';
-import { evalStrategy, Allocation } from '@/lib/evaluators';
+import { evalStrategy } from '@/lib/evaluators';
 import { sendEmail } from '@/lib/email';
+import {
+  getLatestAllocationByStrategy,
+  insertAllocation,
+} from '@/lib/database/allocation';
+import { toUTCMarketClose } from '@/lib/market/dates';
 
 export const runtime = 'nodejs';
-
-function allocationsDiffer(a: Allocation, b: Allocation): boolean {
-  if (a.name !== b.name) {
-    return true;
-  }
-
-  const normalize = (allocation: Allocation) =>
-    allocation.holdings
-      .map((holding) => ({
-        symbol: holding.ticker.symbol,
-        distribution: Number(holding.distribution.toFixed(6)),
-      }))
-      .sort((x, y) => x.symbol.localeCompare(y.symbol));
-
-  const aHoldings = normalize(a);
-  const bHoldings = normalize(b);
-
-  if (aHoldings.length !== bHoldings.length) {
-    return true;
-  }
-
-  for (let i = 0; i < aHoldings.length; i++) {
-    const left = aHoldings[i];
-    const right = bHoldings[i];
-    if (
-      left.symbol !== right.symbol ||
-      left.distribution !== right.distribution
-    ) {
-      return true;
-    }
-  }
-
-  return false;
-}
 
 export async function GET(request: NextRequest) {
   const auth = request.headers.get('authorization');
@@ -52,9 +22,10 @@ export async function GET(request: NextRequest) {
   try {
     const strategies = await getStrategiesWithSubscribers();
     if (!strategies.length) {
-      return NextResponse.json({ evaluated: 0, reallocated: 0 });
+      return NextResponse.json({ evaluated: 0, reallocated: 0, emailed: 0 });
     }
 
+    let emailsSent = 0;
     let reallocatedCount = 0;
     for (const strategy of strategies) {
       const evaluated = await evalStrategy(
@@ -62,27 +33,39 @@ export async function GET(request: NextRequest) {
         strategy.testfolio_id,
       );
 
-      const previous = await getLatestStrategyEvaluation(strategy.id);
-      const hasReallocation = previous
-        ? allocationsDiffer(previous.allocation, evaluated.allocation)
-        : false;
-
-      await insertStrategyEvaluation(
-        strategy.id,
-        evaluated.allocation,
-        evaluated.date,
+      const previous = await getLatestAllocationByStrategy(
+        strategy.testfolio_id,
       );
 
-      if (hasReallocation) {
+      if (!previous) {
+        // newly subscribed strategy
+        await insertAllocation(
+          strategy.testfolio_id,
+          toUTCMarketClose(evaluated.date),
+          evaluated.allocation.name,
+        );
+        continue;
+      }
+
+      if (previous.name !== evaluated.name) {
         reallocatedCount++;
-        for (const sub of strategy.subscribers) {
+        await insertAllocation(
+          strategy.testfolio_id,
+          toUTCMarketClose(evaluated.date),
+          evaluated.allocation.name,
+        );
+
+        for (const subscriber of strategy.subscribers) {
+          emailsSent++;
           await sendEmail(
-            sub,
-            `Your subscribed strategy ${evaluated.name} switched allocation!`,
+            subscriber,
+            `Your strategy ${evaluated.name} switched allocation!`,
             ReallocationEmail({
+              prevAllocationName: previous.name,
+              subscriberName: subscriber,
               strategyName: evaluated.name,
               strategyId: evaluated.id,
-              allocation: evaluated.allocation,
+              currAllocation: evaluated.allocation,
               evaluationDate: evaluated.date,
             }),
           );
@@ -93,6 +76,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       evaluated: strategies.length,
       reallocated: reallocatedCount,
+      emailed: emailsSent,
     });
   } catch (error) {
     console.error('Failed to run strategy evaluation cron', error);

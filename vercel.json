@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/evaluate-strategies",
+      "schedule": "0 21 * * 1-5"
+    }
+  ]
+}

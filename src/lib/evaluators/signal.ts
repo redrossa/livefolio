@@ -1,5 +1,6 @@
 import { Comparison, Signal as TestfolioSignal } from '@/lib/testfolio';
-import { Indicator, evalIndicator } from '@/lib/evaluators/indicator';
+import { evalIndicator, Indicator } from '@/lib/evaluators/indicator';
+import { getSignal, setSignal } from '@/lib/redis/signal';
 
 export interface Signal {
   name: string;
@@ -22,6 +23,18 @@ export async function evalSignal(
   }
 
   const tolerance = signal.tolerance ?? 0;
+
+  let result = await getSignal(
+    indicator1,
+    indicator2,
+    signal.comparison,
+    tolerance,
+    date,
+  );
+  if (result) {
+    return result;
+  }
+
   const lowerBound =
     indicator1.unit === '%'
       ? indicator2.value - tolerance
@@ -44,7 +57,7 @@ export async function evalSignal(
       break;
   }
 
-  return {
+  result = {
     name: signal.name,
     indicator1,
     comparison: signal.comparison,
@@ -52,4 +65,8 @@ export async function evalSignal(
     tolerance,
     isTrue,
   };
+
+  await setSignal(result, date);
+
+  return result;
 }

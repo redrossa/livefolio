@@ -12,10 +12,9 @@ export function createIndicatorKey(
   delay: number,
   date: string,
 ): string {
-  if (type === 'Threshold') {
-    throw new Error('Threshold types not supported');
-  }
-  return `${PREFIX}:${ticker.display}:${type}(${lookback})-${delay}@${date}`;
+  return type === 'Threshold'
+    ? `${PREFIX}:${type}@${date}`
+    : `${PREFIX}:${ticker.display}:${type}(${lookback})-${delay}@${date}`;
 }
 
 export async function setIndicator(

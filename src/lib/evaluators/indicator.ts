@@ -47,7 +47,7 @@ export async function evalIndicator(
   const lookback = indicator.lookback ?? 0;
   const delay = indicator.delay ?? 0;
 
-  let result = await getIndicator(ticker, type, lookback, delay, date);
+  let result = await getIndicator(ticker, type, value, lookback, delay);
   if (result) {
     return result;
   }
@@ -156,7 +156,7 @@ export async function evalIndicator(
     delay,
   };
 
-  await setIndicator(result, date);
+  await setIndicator(result);
 
   return result;
 }

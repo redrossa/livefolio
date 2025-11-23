@@ -29,7 +29,6 @@ export async function evalSignal(
     indicator2,
     signal.comparison,
     tolerance,
-    date,
   );
   if (result) {
     return result;
@@ -66,7 +65,7 @@ export async function evalSignal(
     isTrue,
   };
 
-  await setSignal(result, date);
+  await setSignal(result);
 
   return result;
 }

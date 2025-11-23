@@ -1,6 +1,6 @@
 import { Indicator, Ticker } from '@/lib/evaluators';
 import redis from '@/lib/redis/redis';
-import { getExAt } from '@/lib/redis/ex';
+import { getPxAt } from '@/lib/redis/expiry';
 import { IndicatorType } from '@/lib/testfolio';
 
 const PREFIX = 'indicator';
@@ -8,19 +8,16 @@ const PREFIX = 'indicator';
 export function createIndicatorKey(
   ticker: Ticker,
   type: IndicatorType,
+  value: number,
   lookback: number,
   delay: number,
-  date: string,
 ): string {
   return type === 'Threshold'
-    ? `${PREFIX}:${type}@${date}`
-    : `${PREFIX}:${ticker.display}:${type}(${lookback})-${delay}@${date}`;
+    ? `${PREFIX}:${type}(${value})`
+    : `${PREFIX}:${ticker.display}:${type}(${lookback})-${delay}`;
 }
 
-export async function setIndicator(
-  indicator: Indicator,
-  requestedDate: string,
-) {
+export async function setIndicator(indicator: Indicator) {
   if (indicator.type === 'Threshold') {
     return;
   }
@@ -29,26 +26,26 @@ export async function setIndicator(
     createIndicatorKey(
       indicator.ticker,
       indicator.type,
+      indicator.value,
       indicator.lookback,
       indicator.delay,
-      requestedDate,
     ),
     indicator,
-    { exat: getExAt() },
+    { pxat: getPxAt() },
   );
 }
 
 export async function getIndicator(
   ticker: Ticker,
   type: IndicatorType,
+  value: number,
   lookback: number,
   delay: number,
-  date: string,
 ): Promise<Indicator | null> {
   if (type === 'Threshold') {
     return null;
   }
 
-  const key = createIndicatorKey(ticker, type, lookback, delay, date);
+  const key = createIndicatorKey(ticker, type, value, lookback, delay);
   return redis.get<Indicator>(key);
 }

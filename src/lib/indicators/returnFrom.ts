@@ -7,10 +7,12 @@ export default async function returnFrom(
   date: string,
   length: number,
   delay = 0,
-): Promise<number> {
+): Promise<[number, string]> {
   const delayed = delayDate(date, delay);
   const series = await fetchSeries(ticker, delayed, length);
   const initialPrice = series[0].value;
   const finalPrice = series[series.length - 1].value;
-  return percentChange(initialPrice, finalPrice);
+  const value = percentChange(initialPrice, finalPrice);
+  const realDate = series[series.length - 1].date;
+  return [value, realDate];
 }

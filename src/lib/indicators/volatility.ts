@@ -7,12 +7,14 @@ export default async function volatility(
   date: string,
   length: number,
   delay = 0,
-): Promise<number> {
+): Promise<[number, string]> {
   const delayed = delayDate(date, delay);
   const series = await fetchSeries(ticker, delayed, length + 1); // add 1 to calculate first day return
   const returns = relativeChanges(series.map((p) => p.value));
   const meanReturns = mean(returns);
   const variance = mean(returns.map((x) => Math.pow(x - meanReturns, 2)));
   const sd = Math.sqrt(variance);
-  return sd * Math.sqrt(252) * 100;
+  const value = sd * Math.sqrt(252) * 100;
+  const realDate = series[series.length - 1].date;
+  return [value, realDate];
 }

@@ -9,7 +9,13 @@ export function toUSMarketDateString(date: Date): string {
 function toUTCMarketDate(date: string, hours: number, minutes: number): Date {
   const utc = new Date(date);
   return new Date(
-    Date.UTC(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate(), hours, minutes),
+    Date.UTC(
+      utc.getUTCFullYear(),
+      utc.getUTCMonth(),
+      utc.getUTCDate(),
+      hours,
+      minutes,
+    ),
   );
 }
 

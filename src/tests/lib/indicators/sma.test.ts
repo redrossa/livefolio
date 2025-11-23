@@ -6,9 +6,10 @@ describe('SMA Indicator', () => {
   const date = '2024-12-31';
 
   it('should return the 200 day SMA of SPY at specified date', async () => {
-    const result = await sma('SPY', date, 200);
+    const [resultValue, resultDate] = await sma('SPY', date, 200);
 
     expect(mockFetchSeries).toHaveBeenCalledWith('SPY', date, 200);
-    expect(result).toBeCloseTo(553.7220497131348);
+    expect(resultValue).toBeCloseTo(553.7220497131348);
+    expect(resultDate).toBe('2024-12-31');
   });
 });

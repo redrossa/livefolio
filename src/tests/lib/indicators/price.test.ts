@@ -6,9 +6,10 @@ describe('Price Indicator', () => {
   const date = '2024-12-31';
 
   it('should return the price of SPY at specified date', async () => {
-    const result = await price('SPY', date);
+    const [resultValue, resultDate] = await price('SPY', date);
 
     expect(mockFetchSeries).toHaveBeenCalledWith('SPY', date);
-    expect(result).toBe(586.0800170898438);
+    expect(resultValue).toBe(586.0800170898438);
+    expect(resultDate).toBe('2024-12-31');
   });
 });

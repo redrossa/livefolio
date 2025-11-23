@@ -6,9 +6,10 @@ describe('EMA Indicator', () => {
   const date = '2024-12-31';
 
   it('should return the 20 day EMA of SPY at specified date', async () => {
-    const result = await ema('SPY', date, 20);
+    const [resultValue, resultDate] = await ema('SPY', date, 20);
 
     expect(mockFetchSeries).toHaveBeenCalledWith('SPY', date, null);
-    expect(result).toBeCloseTo(595.9916655636844);
+    expect(resultValue).toBeCloseTo(595.9916655636844);
+    expect(resultDate).toBe('2024-12-31');
   });
 });

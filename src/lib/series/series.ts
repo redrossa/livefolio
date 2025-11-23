@@ -11,9 +11,9 @@ export interface SeriesPoint {
 
 /**
  * Returns a series of date-close price pairs of a given ticker, sorted by date
- * in ascending order. The last data point is always at given end date. All
- * dates in the series are unique. The length of the returned series is the given
- * length if non-null, else the maximum available data for the ticker up to 1954
+ * in ascending order. All dates in the series are unique. The length of the
+ * returned series is the given length if non-null, else the maximum available
+ * data for the ticker up to 1954.
  * @param ticker ticker symbol
  * @param end date string
  * @param length number of data points returned

@@ -6,15 +6,25 @@ export function toUSMarketDateString(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
+function toUTCMarketDate(date: string, hours: number, minutes: number): Date {
+  const utc = new Date(date);
+  return new Date(
+    Date.UTC(
+      utc.getUTCFullYear(),
+      utc.getUTCMonth(),
+      utc.getUTCDate(),
+      hours,
+      minutes,
+    ),
+  );
+}
+
 /**
  * Converts date string YYYY-MM-DD to UTC market close date time
  * @param date date string
  */
 export function toUTCMarketClose(date: string): Date {
-  const utc = new Date(date);
-  return new Date(
-    Date.UTC(utc.getFullYear(), utc.getMonth(), utc.getDate(), 14, 30),
-  );
+  return toUTCMarketDate(date, 21, 0);
 }
 
 /**
@@ -22,10 +32,7 @@ export function toUTCMarketClose(date: string): Date {
  * @param date date string
  */
 export function toUTCMarketOpen(date: string): Date {
-  const utc = new Date(date);
-  return new Date(
-    Date.UTC(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate(), 21, 0),
-  );
+  return toUTCMarketDate(date, 14, 30);
 }
 
 /**

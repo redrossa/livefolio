@@ -25,6 +25,7 @@ import {
 export type Unit = '%' | '$' | null;
 
 export interface Indicator {
+  date: string;
   type: IndicatorType;
   ticker: Ticker;
   value: number;
@@ -43,70 +44,72 @@ export async function evalIndicator(
   const lookback = indicator.lookback ?? 0;
   const delay = indicator.delay ?? 0;
   let value: number;
+  let realDate: string;
   let unit: Unit = null;
   switch (type) {
     case 'SMA':
-      value = await sma(symbol, date, lookback, delay);
+      [value, realDate] = await sma(symbol, date, lookback, delay);
       unit = '$';
       break;
     case 'EMA':
-      value = await ema(symbol, date, lookback, delay);
+      [value, realDate] = await ema(symbol, date, lookback, delay);
       unit = '$';
       break;
     case 'Price':
-      value = await price(symbol, date, delay);
+      [value, realDate] = await price(symbol, date, delay);
       unit = '$';
       break;
     case 'Return':
-      value = await returnFrom(symbol, date, lookback, delay);
+      [value, realDate] = await returnFrom(symbol, date, lookback, delay);
       unit = '%';
       break;
     case 'Volatility':
-      value = await volatility(symbol, date, lookback, delay);
+      [value, realDate] = await volatility(symbol, date, lookback, delay);
       unit = '%';
       break;
     case 'Drawdown':
-      value = await drawdown(symbol, date, delay);
+      [value, realDate] = await drawdown(symbol, date, delay);
       unit = '%';
       break;
     case 'RSI':
-      value = await rsi(symbol, date, lookback, delay);
+      [value, realDate] = await rsi(symbol, date, lookback, delay);
       break;
     case 'VIX':
-      value = await vix(date, delay);
+      [value, realDate] = await vix(date, delay);
       unit = '$';
       break;
     case 'T10Y':
-      value = await t10y(date, delay);
+      [value, realDate] = await t10y(date, delay);
       unit = '$';
       break;
     case 'T2Y':
-      value = await t2y(date, delay);
+      [value, realDate] = await t2y(date, delay);
       unit = '$';
       break;
     case 'T3M':
-      value = await t3m(date, delay);
+      [value, realDate] = await t3m(date, delay);
       unit = '$';
       break;
     case 'Month':
-      value = month(date, delay);
+      [value, realDate] = month(date, delay);
       break;
     case 'Day of Week':
-      value = dayOfWeek(date, delay);
+      [value, realDate] = dayOfWeek(date, delay);
       break;
     case 'Day of Month':
-      value = dayOfMonth(date, delay);
+      [value, realDate] = dayOfMonth(date, delay);
       break;
     case 'Day of Year':
-      value = dayOfYear(date, delay);
+      [value, realDate] = dayOfYear(date, delay);
       break;
     case 'Threshold':
-      value = threshold(indicator.value!);
+      [value, realDate] = threshold(indicator.value!, date);
       break;
   }
   return {
     type,
     ticker,
+    date: realDate,
     value,
     unit,
     lookback,

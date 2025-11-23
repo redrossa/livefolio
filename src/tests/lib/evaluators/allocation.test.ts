@@ -29,6 +29,7 @@ const evaluatedIndicator: Indicator = {
     leverage: 1,
     display: 'SPY',
   },
+  date: '2024-01-02',
   value: 100,
   unit: '$',
   lookback: 0,

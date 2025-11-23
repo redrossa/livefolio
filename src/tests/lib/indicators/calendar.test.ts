@@ -1,64 +1,31 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-const { delayDateMock, toUTCMarketCloseMock, toUTCMarketOpenMock } = vi.hoisted(
-  () => ({
-    delayDateMock: vi.fn<(date: string, d: number) => string>(),
-    toUTCMarketCloseMock: vi.fn<(date: string) => Date>(),
-    toUTCMarketOpenMock: vi.fn<(date: string) => Date>(),
-  }),
-);
-
-vi.mock('@/lib/market/dates', () => ({
-  delayDate: delayDateMock,
-  toUTCMarketClose: toUTCMarketCloseMock,
-  toUTCMarketOpen: toUTCMarketOpenMock,
-}));
-
+import { describe, expect, it } from 'vitest';
 import { dayOfMonth, dayOfWeek, dayOfYear, month } from '@/lib/indicators';
-
-const BASE_TIMESTAMP = Date.UTC(2024, 4, 15); // 2024-05-15
-const formatDate = (ms: number): string =>
-  new Date(ms).toISOString().slice(0, 10);
 
 describe('Calendar Indicators', () => {
   const date = '2024-12-31';
 
-  beforeEach(() => {
-    delayDateMock.mockReset();
-    toUTCMarketCloseMock.mockReset();
-    toUTCMarketOpenMock.mockReset();
-
-    delayDateMock.mockImplementation((_, delay = 0) => {
-      const copy = new Date(BASE_TIMESTAMP);
-      copy.setUTCDate(copy.getUTCDate() - delay);
-      return formatDate(copy.getTime());
-    });
-
-    const toUTCDate = (value: string) => new Date(`${value}T12:00:00.000Z`);
-    toUTCMarketCloseMock.mockImplementation(toUTCDate);
-    toUTCMarketOpenMock.mockImplementation(toUTCDate);
-  });
-
   it('returns the UTC month with optional delay', () => {
-    expect(month(date)).toBe(5);
-    expect(delayDateMock).toHaveBeenCalledWith(date, 0);
+    const [value, realDate] = month(date);
+    expect(value).toBe(12);
+    expect(realDate).toBe('2024-12-31');
 
-    expect(month(date, 31)).toBe(4);
-    expect(delayDateMock).toHaveBeenCalledWith(date, 31);
+    const [value2, realDate2] = month(date, 31);
+    expect(value2).toBe(11);
+    expect(realDate2).toBe('2024-11-30');
   });
 
   it('returns the UTC day of week with optional delay', () => {
-    expect(dayOfWeek(date)).toBe(3);
-    expect(dayOfWeek(date, 1)).toBe(2);
+    expect(dayOfWeek(date)).toEqual([2, '2024-12-31']);
+    expect(dayOfWeek(date, 1)).toEqual([1, '2024-12-30']);
   });
 
   it('returns the UTC day of month with optional delay', () => {
-    expect(dayOfMonth(date)).toBe(15);
-    expect(dayOfMonth(date, 1)).toBe(14);
+    expect(dayOfMonth(date)).toEqual([31, '2024-12-31']);
+    expect(dayOfMonth(date, 1)).toEqual([30, '2024-12-30']);
   });
 
   it('returns the UTC day of year respecting delay', () => {
-    expect(dayOfYear(date)).toBe(136);
-    expect(dayOfYear(date, 30)).toBe(106);
+    expect(dayOfYear(date)).toEqual([366, '2024-12-31']);
+    expect(dayOfYear(date, 30)).toEqual([336, '2024-12-01']);
   });
 });

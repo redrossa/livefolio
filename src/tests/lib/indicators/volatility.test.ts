@@ -6,9 +6,10 @@ describe('Volatility Indicator', () => {
   const date = '2024-12-31';
 
   it('should return the volatility of SPY at specified date from a 200 day period', async () => {
-    const result = await volatility('SPY', date, 200);
+    const [resultValue, resultDate] = await volatility('SPY', date, 200);
 
     expect(mockFetchSeries).toHaveBeenCalledWith('SPY', date, 201);
-    expect(result).toBeCloseTo(12.819227952131151, 6);
+    expect(resultValue).toBeCloseTo(12.819227952131151, 6);
+    expect(resultDate).toBe('2024-12-31');
   });
 });

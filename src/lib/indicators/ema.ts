@@ -7,11 +7,13 @@ export default async function ema(
   date: string,
   length: number,
   delay = 0,
-): Promise<number> {
+): Promise<[number, string]> {
   const delayed = delayDate(date, delay);
   const series = await fetchSeries(ticker, delayed, null);
-  return smoothing(
+  const value = smoothing(
     series.map((p) => p.value),
     length,
   );
+  const realDate = series[series.length - 1].date;
+  return [value, realDate];
 }

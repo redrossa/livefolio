@@ -7,8 +7,10 @@ export default async function sma(
   date: string,
   length: number,
   delay = 0,
-): Promise<number> {
+): Promise<[number, string]> {
   const delayed = delayDate(date, delay);
   const series = await fetchSeries(ticker, delayed, length);
-  return mean(series.map((p) => p.value));
+  const value = mean(series.map((p) => p.value));
+  const realDate = series[series.length - 1].date;
+  return [value, realDate];
 }

@@ -6,7 +6,7 @@ import { toUSMarketDateString } from '@/lib/market/dates';
 export interface Strategy {
   name: string;
   id: string;
-  date: string;
+  date: Date;
   allocation: Allocation;
 }
 
@@ -14,7 +14,8 @@ export async function evalStrategy(
   strategy: TestfolioStrategy,
   id: string,
 ): Promise<Strategy> {
-  const date = toUSMarketDateString(new Date());
+  const now = new Date();
+  const date = toUSMarketDateString(now);
 
   if (!strategy.allocations.length) {
     throw new Error('Strategy must include at least one allocation.');
@@ -49,7 +50,7 @@ export async function evalStrategy(
   return {
     name: strategy.name || 'Untitled Strategy',
     id,
-    date,
+    date: now,
     allocation,
   };
 }

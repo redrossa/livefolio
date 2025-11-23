@@ -7,7 +7,7 @@ export default async function rsi(
   date: string,
   length: number,
   delay = 0,
-): Promise<number> {
+): Promise<[number, string]> {
   const delayed = delayDate(date, delay);
   const series = await fetchSeries(ticker, delayed, null);
 
@@ -20,7 +20,7 @@ export default async function rsi(
   const avgLoss = smoothing(losses, length, k);
 
   const rs = avgGain / avgLoss;
-  const rsi = 100 - 100 / (1 + rs);
-
-  return rsi;
+  const value = 100 - 100 / (1 + rs);
+  const realDate = series[series.length - 1].date;
+  return [value, realDate];
 }

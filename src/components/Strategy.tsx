@@ -14,6 +14,8 @@ import { getStrategy } from '@/lib/testfolio';
 import { ChevronLeft, ChevronRight, Equal, EqualNot } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { clsx } from 'clsx';
+import ClientTimeFormat from '@/components/ClientTimeFormat';
+import { toUTCMarketClose } from '@/lib/market/dates';
 
 interface Props {
   strategyId: string;
@@ -44,7 +46,22 @@ export const Strategy = async ({ strategyId }: Props) => {
       <section>
         <h3>Current Allocation</h3>
         <p className="text-muted-foreground">
-          Today&#39;s evaluation is based on previous day&#39;s closing prices.
+          Today&#39;s evaluation as of{' '}
+          <strong>
+            <ClientTimeFormat
+              formatOptions={{
+                weekday: 'short', // "Sun"
+                month: 'short', // "Nov"
+                day: 'numeric', // "23"
+                year: 'numeric', // "2025"
+                hour: 'numeric', // "7"
+                minute: '2-digit', // "42"
+                hour12: true, // "pm" (uses 12-hour clock with AM/PM)
+              }}
+              date={evaluated.date}
+            />
+          </strong>{' '}
+          is based on previous day&#39;s closing prices.
         </p>
         <StrategyAllocation allocation={evaluated.allocation} />
       </section>
@@ -152,9 +169,9 @@ const StrategySignal = ({ signal }: { signal: Signal }) => {
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex items-center gap-1 md:gap-4">
+      <CardContent className="flex flex-col md:flex-row gap-4">
         <StrategyIndicator indicator={signal.indicator1} />
-        <Comparison />
+        <Comparison size={36} />
         <StrategyIndicator
           indicator={signal.indicator2}
           tolerance={{ sign: toleranceSign, value: signal.tolerance }}
@@ -195,9 +212,19 @@ const StrategyIndicator = ({
     `${indicator.ticker.display} ${type} ${lookback} ${delay}`.trim();
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-2">
       <span className="text-3xl">{formattedValue}</span>
       <small className="muted">{name}</small>
+      <small className="muted">
+        <ClientTimeFormat
+          formatOptions={{
+            month: 'short', // Abbreviated month name (e.g., Nov)
+            day: 'numeric', // Day of the month (e.g., 23)
+            year: 'numeric', // Full year (e.g., 2025)
+          }}
+          date={toUTCMarketClose(indicator.date)}
+        />
+      </small>
     </div>
   );
 };

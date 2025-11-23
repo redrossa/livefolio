@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Strategy as TestfolioStrategy } from '@/lib/testfolio';
 import { evalStrategy } from '@/lib/evaluators/strategy';
 import { evalAllocation } from '@/lib/evaluators/allocation';
@@ -25,6 +25,7 @@ const evaluatedIndicator: Indicator = {
     leverage: 1,
     display: 'SPY',
   },
+  date: '2024-01-02',
   value: 100,
   unit: '$',
   lookback: 0,
@@ -47,6 +48,7 @@ const makeAllocationResult = (
 ): { allocation: Allocation; evaluatedSignals: Record<string, Signal> } => ({
   allocation: {
     name,
+    change: 0,
     holdings: [],
     signals: activeSignals.map((signal) => evaluatedSignals[signal]),
   },
@@ -93,8 +95,14 @@ const baseStrategy: TestfolioStrategy = {
 
 describe('evalStrategy', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-01-02T12:00:00.000Z'));
     mockEvalAllocation.mockReset();
     mockToMarketDate.mockReturnValue('2024-01-02');
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('returns the first allocation whose signals evaluate to true', async () => {
@@ -116,7 +124,7 @@ describe('evalStrategy', () => {
     const result = await evalStrategy(baseStrategy, 'strategy-1');
 
     expect(result.name).toBe('Layered Strategy');
-    expect(result.date).toBe('2024-01-02');
+    expect(result.date).toEqual(new Date('2024-01-02T12:00:00.000Z'));
     expect(result.allocation.name).toBe('Balanced');
     expect(result.allocation.signals.map((s) => s?.name)).toEqual(['Fallback']);
     expect(mockEvalAllocation).toHaveBeenCalledTimes(2);

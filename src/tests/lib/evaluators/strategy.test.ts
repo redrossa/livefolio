@@ -3,7 +3,6 @@ import type { Strategy as TestfolioStrategy } from '@/lib/testfolio';
 import { evalStrategy } from '@/lib/evaluators/strategy';
 import { evalAllocation } from '@/lib/evaluators/allocation';
 import { toUSMarketDateString } from '@/lib/market/dates';
-import type { Allocation } from '@/lib/evaluators/allocation';
 import type { Signal } from '@/lib/evaluators/signal';
 import type { Indicator } from '@/lib/evaluators/indicator';
 
@@ -45,14 +44,11 @@ const makeAllocationResult = (
   name: string,
   activeSignals: string[],
   evaluatedSignals: Record<string, Signal>,
-): { allocation: Allocation; evaluatedSignals: Record<string, Signal> } => ({
-  allocation: {
-    name,
-    change: 0,
-    holdings: [],
-    signals: activeSignals.map((signal) => evaluatedSignals[signal]),
-  },
-  evaluatedSignals,
+) => ({
+  name,
+  change: 0,
+  holdings: [],
+  signals: activeSignals.map((signal) => evaluatedSignals[signal]),
 });
 
 const baseStrategy: TestfolioStrategy = {
@@ -128,9 +124,6 @@ describe('evalStrategy', () => {
     expect(result.allocation.name).toBe('Balanced');
     expect(result.allocation.signals.map((s) => s?.name)).toEqual(['Fallback']);
     expect(mockEvalAllocation).toHaveBeenCalledTimes(2);
-    expect(mockEvalAllocation.mock.calls[1]?.[3]).toEqual({
-      cachedSignals: firstResultSignals,
-    });
   });
 
   it('falls back to the last allocation when no signals are true', async () => {

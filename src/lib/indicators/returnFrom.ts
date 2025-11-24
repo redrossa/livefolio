@@ -11,7 +11,7 @@ export default async function returnFrom(
   delay = 0,
 ): Promise<[number, string]> {
   const delayed = delayDate(date, delay);
-  const series = await fetchSeries(ticker, delayed, length);
+  const series = await fetchSeries(ticker, delayed, length + 1); // add 1 because "return from length=0+1=1 day ago"
   const leveraged = applyLeverage(series, leverage);
   const initialPrice = leveraged[0].value;
   const finalPrice = leveraged[leveraged.length - 1].value;

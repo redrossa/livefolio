@@ -58,7 +58,7 @@ describe('evalAllocation', () => {
     mockEvalSignal.mockReset();
   });
 
-  it('returns the first satisfied OR group and caches evaluated signals', async () => {
+  it('returns the first satisfied OR group', async () => {
     const allocation: TestfolioAllocation = {
       name: 'Growth',
       signals: ['Defense', 'Momentum', 'Fallback'],
@@ -79,39 +79,28 @@ describe('evalAllocation', () => {
 
     const result = await evalAllocation(allocation, signals, '2024-01-02');
 
-    expect(result.allocation.signals.map((s) => s.name)).toEqual(['Fallback']);
-    expect(Object.keys(result.evaluatedSignals)).toEqual([
-      'Defense',
-      'Momentum',
-      'Fallback',
-    ]);
+    expect(result.signals.map((s) => s.name)).toEqual(['Fallback']);
     expect(mockEvalSignal).toHaveBeenCalledTimes(3);
   });
 
-  it('uses cached signals when available', async () => {
+  it('evaluates provided signals', async () => {
     const allocation: TestfolioAllocation = {
-      name: 'Cached',
+      name: 'Single',
       signals: ['Defense'],
       ops: [],
       nots: [false],
       tickers: [{ ticker: 'SPYSIM', percent: 100 }],
       drag: 0,
     };
-    const definition = makeSignalDefinition('Defense');
-    const cachedSignal = makeEvaluatedSignal('Defense', true);
+    const definition = [makeSignalDefinition('Defense')];
+    const evaluated = makeEvaluatedSignal('Defense', true);
 
-    const result = await evalAllocation(
-      allocation,
-      [definition],
-      '2024-01-02',
-      {
-        cachedSignals: { Defense: cachedSignal },
-      },
-    );
+    mockEvalSignal.mockResolvedValueOnce(evaluated);
 
-    expect(mockEvalSignal).not.toHaveBeenCalled();
-    expect(result.allocation.signals).toEqual([cachedSignal]);
-    expect(result.evaluatedSignals.Defense).toBe(cachedSignal);
+    const result = await evalAllocation(allocation, definition, '2024-01-02');
+
+    expect(result.signals).toEqual([evaluated]);
+    expect(mockEvalSignal).toHaveBeenCalledTimes(1);
   });
 
   it('honors NOT flags when building the satisfied signal list', async () => {
@@ -129,7 +118,7 @@ describe('evalAllocation', () => {
 
     const result = await evalAllocation(allocation, signals, '2024-01-02');
 
-    expect(result.allocation.signals.map((s) => s.name)).toEqual(['Defense']);
-    expect(result.allocation.signals[0]?.isTrue).toBe(false);
+    expect(result.signals.map((s) => s.name)).toEqual(['Defense']);
+    expect(result.signals[0]?.isTrue).toBe(false);
   });
 });

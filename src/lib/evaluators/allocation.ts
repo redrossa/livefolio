@@ -18,54 +18,21 @@ export interface Allocation {
   signals: Signal[];
 }
 
-export interface EvalAllocationOptions {
-  cachedSignals: Record<string, Signal>;
-}
-
-export interface EvalAllocationResult {
-  allocation: Allocation;
-  evaluatedSignals: Record<string, Signal>;
-}
-
 export async function evalAllocation(
   allocation: TestfolioAllocation,
   signals: TestfolioSignal[],
   date: string,
-  options?: EvalAllocationOptions,
-): Promise<EvalAllocationResult> {
-  const cachedSignals: Record<string, Signal> = {
-    ...(options?.cachedSignals ?? {}),
-  };
-  const signalDefinitions = new Map<string, TestfolioSignal>(
-    signals.map((s) => [s.name, s]),
+): Promise<Allocation> {
+  const evaluatedSignals = await Promise.all(
+    signals.map(async (signal) => await evalSignal(signal, date)),
   );
 
-  const hasCachedSignal = (name: string): boolean =>
-    Object.hasOwn(cachedSignals, name);
-
-  const missingSignalNames = Array.from(
-    new Set(allocation.signals.filter((name) => !hasCachedSignal(name))),
+  const signalMap = Object.fromEntries(
+    evaluatedSignals.map((s) => [s.name, s]),
   );
-
-  if (missingSignalNames.length > 0) {
-    const missingSignals = await Promise.all(
-      missingSignalNames.map((name) => {
-        const definition = signalDefinitions.get(name);
-        if (!definition) {
-          throw new Error(`Missing definition for signal "${name}".`);
-        }
-
-        return evalSignal(definition, date);
-      }),
-    );
-
-    missingSignalNames.forEach((name, index) => {
-      cachedSignals[name] = missingSignals[index];
-    });
-  }
 
   const terms: Term[] = allocation.signals.map((name) => {
-    const signal = cachedSignals[name];
+    const signal = signalMap[name];
     if (!signal) {
       throw new Error(`Missing evaluation result for signal "${name}".`);
     }
@@ -103,16 +70,11 @@ export async function evalAllocation(
     }),
   );
 
-  const evaluated: Allocation = {
+  return {
     name: allocation.name,
     change: allocationChange,
     holdings,
-    signals: short.map(({ name }) => cachedSignals[name]),
-  };
-
-  return {
-    allocation: evaluated,
-    evaluatedSignals: cachedSignals,
+    signals: short.map(({ name }) => signalMap[name]),
   };
 }
 

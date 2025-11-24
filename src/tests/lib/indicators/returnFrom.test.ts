@@ -8,8 +8,8 @@ describe('Return Indicator', () => {
   it('should return the percent change of SPY at specified date from a 200 day period', async () => {
     const [resultValue, resultDate] = await returnFrom('SPY', date, 200);
 
-    expect(mockFetchSeries).toHaveBeenCalledWith('SPY', date, 200);
-    expect(resultValue).toBeCloseTo(14.276807282613275);
+    expect(mockFetchSeries).toHaveBeenCalledWith('SPY', date, 201);
+    expect(resultValue).toBeCloseTo(14.955972093801137);
     expect(resultDate).toBe('2024-12-31');
   });
 });

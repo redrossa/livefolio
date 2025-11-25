@@ -6,6 +6,8 @@ import { getPxAt } from '@/lib/redis/expiry';
 
 const PREFIX = 'signal';
 
+type CachedSignal = Omit<Signal, 'name'>;
+
 export function createSignalKey(
   indicator1: Indicator,
   indicator2: Indicator,
@@ -36,7 +38,8 @@ export async function setSignal(signal: Signal) {
     signal.comparison,
     signal.tolerance,
   );
-  await redis.set(key, signal, { pxat: getPxAt() });
+  const { name: _name, ...cachedSignal } = signal;
+  await redis.set(key, cachedSignal, { pxat: getPxAt() });
 }
 
 export async function getSignal(
@@ -44,7 +47,7 @@ export async function getSignal(
   indicator2: Indicator,
   comparison: Comparison,
   tolerance: number,
-): Promise<Signal | null> {
+): Promise<CachedSignal | null> {
   const key = createSignalKey(indicator1, indicator2, comparison, tolerance);
-  return await redis.get<Signal>(key);
+  return await redis.get<CachedSignal>(key);
 }

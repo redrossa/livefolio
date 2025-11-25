@@ -24,14 +24,14 @@ export async function evalSignal(
 
   const tolerance = signal.tolerance ?? 0;
 
-  let result = await getSignal(
+  const cachedSignal = await getSignal(
     indicator1,
     indicator2,
     signal.comparison,
     tolerance,
   );
-  if (result) {
-    return result;
+  if (cachedSignal) {
+    return { ...cachedSignal, name: signal.name };
   }
 
   const lowerBound =
@@ -56,7 +56,7 @@ export async function evalSignal(
       break;
   }
 
-  result = {
+  const result = {
     name: signal.name,
     indicator1,
     comparison: signal.comparison,

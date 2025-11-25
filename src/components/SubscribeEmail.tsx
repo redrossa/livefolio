@@ -55,7 +55,7 @@ const SubscribeEmail = ({ name, strategyName, strategyId }: Props) => {
               The Livefol.io team
             </Text>
             <Hr className="border-border my-5" />
-            <Text className="text-zinc-100 text-xs">© 2025 Livefol.io</Text>
+            <Text className="text-zinc-400 text-xs">© 2025 Livefol.io</Text>
           </Container>
         </Body>
       </Tailwind>

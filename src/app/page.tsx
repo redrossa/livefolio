@@ -2,9 +2,15 @@ import { Suspense } from 'react';
 import { Metadata, ResolvingMetadata } from 'next';
 import { Strategy, StrategySkeleton } from '@/components/Strategy';
 import { getStrategy } from '@/lib/testfolio';
+import { handleUnsubscribe } from '@/lib/email/unsubscribe';
+import UnsubscribeAlert from '@/components/UnsubscribeAlert';
 
 interface Props {
-  searchParams: Promise<{ s?: string }>;
+  searchParams: Promise<{
+    s?: string;
+    unsubscribe_email?: string;
+    unsubscribe_token?: string;
+  }>;
 }
 
 export async function generateMetadata(
@@ -33,13 +39,17 @@ export async function generateMetadata(
 }
 
 export default async function Home({ searchParams }: Readonly<Props>) {
-  const strategyId = (await searchParams).s;
-  if (!strategyId) {
-    return null;
-  }
+  const resolvedParams = await searchParams;
+  const strategyId = resolvedParams.s;
+  const unsubscribeInfo = await handleUnsubscribe(resolvedParams);
   return (
-    <Suspense key={strategyId} fallback={<StrategySkeleton />}>
-      {<Strategy strategyId={strategyId} />}
-    </Suspense>
+    <>
+      <UnsubscribeAlert unsubscribe={unsubscribeInfo} />
+      {strategyId && (
+        <Suspense key={strategyId} fallback={<StrategySkeleton />}>
+          {<Strategy strategyId={strategyId} />}
+        </Suspense>
+      )}
+    </>
   );
 }

@@ -26,7 +26,7 @@ async function handler(req: NextRequest) {
     subscriberEmail,
     'Updates on your subscribed strategies',
     ReallocationEmail({
-      subscriberName: subscriberEmail,
+      subscriberEmail: subscriberEmail,
       evaluatedStrategies,
     }),
   );

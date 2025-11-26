@@ -7,19 +7,27 @@ import {
   Heading,
   Hr,
   Html,
+  Link,
   Preview,
   Section,
   Tailwind,
   Text,
 } from '@react-email/components';
+import { buildUnsubscribeUrl } from '@/lib/email/unsubscribe';
 
 interface Props {
-  name: string;
+  subscriberEmail: string;
   strategyName: string;
   strategyId: string;
 }
 
-const SubscribeEmail = ({ name, strategyName, strategyId }: Props) => {
+const SubscribeEmail = ({
+  subscriberEmail,
+  strategyName,
+  strategyId,
+}: Props) => {
+  const unsubscribeUrl = buildUnsubscribeUrl(subscriberEmail);
+
   return (
     <Html>
       <Head />
@@ -32,7 +40,7 @@ const SubscribeEmail = ({ name, strategyName, strategyId }: Props) => {
             <Heading as="h1" className="mx-auto font-bold">
               Livefol.io
             </Heading>
-            <Text className="text-base leading-6">Hi {name},</Text>
+            <Text className="text-base leading-6">Hi {subscriberEmail},</Text>
             <Text className="text-base leading-6">
               Thanks for subscribing to Livefol.io strategy signals for{' '}
               <strong>{strategyName}</strong>.
@@ -55,7 +63,10 @@ const SubscribeEmail = ({ name, strategyName, strategyId }: Props) => {
               The Livefol.io team
             </Text>
             <Hr className="border-border my-5" />
-            <Text className="text-zinc-400 text-xs">© 2025 Livefol.io</Text>
+            <Text className="text-zinc-400 text-xs">
+              © 2025 Livefol.io |{' '}
+              <Link href={unsubscribeUrl}>Unsubscribe</Link>
+            </Text>
           </Container>
         </Body>
       </Tailwind>

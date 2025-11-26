@@ -60,3 +60,22 @@ export async function getAllSubscribers(): Promise<SubscriberStrategies[]> {
 
   return Array.from(grouped.values());
 }
+
+export async function deleteSubscriber(email: string): Promise<string[]> {
+  const deleted = await sql`
+    WITH removed AS (
+      DELETE FROM subscriber
+      WHERE email = ${email}
+      RETURNING testfolio_id
+    )
+    SELECT st.testfolio_id, st.definition
+    FROM removed r
+    INNER JOIN strategy st ON st.testfolio_id = r.testfolio_id;
+  `;
+
+  return deleted.map((row) => {
+    const definition = row.definition as Strategy['definition'];
+    const name = definition.name.trim();
+    return name || 'Untitled Strategy';
+  });
+}

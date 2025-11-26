@@ -54,7 +54,7 @@ export default async function handleSubscribe(
       email,
       'Welcome to Livefol.io',
       <SubscribeEmail
-        name={email}
+        subscriberEmail={email}
         strategyName={testfolio_name}
         strategyId={testfolio_id}
       />,

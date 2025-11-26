@@ -15,13 +15,16 @@ import {
   Link,
 } from '@react-email/components';
 import { Strategy } from '@/lib/evaluators';
+import { buildUnsubscribeUrl } from '@/lib/email/unsubscribe';
 
 interface Props {
-  subscriberName: string;
+  subscriberEmail: string;
   evaluatedStrategies: Strategy[];
 }
 
-const ReallocationEmail = ({ subscriberName, evaluatedStrategies }: Props) => {
+const ReallocationEmail = ({ subscriberEmail, evaluatedStrategies }: Props) => {
+  const unsubscribeUrl = buildUnsubscribeUrl(subscriberEmail);
+
   return (
     <Html>
       <Head />
@@ -35,7 +38,7 @@ const ReallocationEmail = ({ subscriberName, evaluatedStrategies }: Props) => {
             <Heading as="h1" className="mx-auto font-bold">
               Livefol.io
             </Heading>
-            <Text className="text-base leading-6">Hi {subscriberName},</Text>
+            <Text className="text-base leading-6">Hi {subscriberEmail},</Text>
             <Text className="text-base leading-6">
               The following strategies switched allocations to these holdings at
               market close today:
@@ -55,13 +58,11 @@ const ReallocationEmail = ({ subscriberName, evaluatedStrategies }: Props) => {
                 </>
               ),
             )}
-            <Text className="text-base leading-6 mt-8">
-              Best,
-              <br />
-              The Livefol.io team
-            </Text>
             <Hr className="border-border my-5" />
-            <Text className="text-zinc-400 text-xs">© 2025 Livefol.io</Text>
+            <Text className="text-zinc-400 text-xs">
+              © 2025 Livefol.io |{' '}
+              <Link href={unsubscribeUrl}>Unsubscribe</Link>
+            </Text>
           </Container>
         </Body>
       </Tailwind>

@@ -17,6 +17,7 @@ export async function insertSubscriber(testfolio_id: string, email: string) {
 }
 
 export interface SubscriberStrategies {
+  id: number;
   email: string;
   strategies: Strategy[];
 }
@@ -37,6 +38,7 @@ export async function getAllSubscribers(): Promise<SubscriberStrategies[]> {
   const grouped = new Map<string, SubscriberStrategies>();
 
   for (const row of rows) {
+    const subscriber_id = row.subscriber_id as number;
     const subscriber_email = row.subscriber_email as string;
     const strategy: Strategy = {
       id: row.strategy_id as number,
@@ -47,6 +49,7 @@ export async function getAllSubscribers(): Promise<SubscriberStrategies[]> {
 
     if (!grouped.has(subscriber_email)) {
       grouped.set(subscriber_email, {
+        id: subscriber_id,
         email: subscriber_email,
         strategies: [],
       });
@@ -75,35 +78,4 @@ export async function deleteSubscriber(email: string): Promise<string[]> {
     const name = definition.name.trim();
     return name || 'Untitled Strategy';
   });
-}
-
-export async function getSubscriberByEmail(
-  email: string,
-): Promise<SubscriberStrategies | null> {
-  const rows = await sql`
-    SELECT
-      s.email as subscriber_email,
-      st.id as strategy_id,
-      st.testfolio_id,
-      st.definition,
-      st.date_added
-    FROM subscriber s
-    INNER JOIN strategy st ON st.testfolio_id = s.testfolio_id
-    WHERE s.email = ${email}
-    ORDER BY st.date_added DESC
-  `;
-
-  if (!rows.length) {
-    return null;
-  }
-
-  return {
-    email: rows[0].subscriber_email as string,
-    strategies: rows.map((row) => ({
-      id: row.strategy_id as number,
-      testfolio_id: row.testfolio_id as string,
-      definition: row.definition as Strategy['definition'],
-      date_added: new Date(row.date_added as string | number | Date),
-    })),
-  };
 }

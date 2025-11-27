@@ -1,9 +1,6 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import { deleteSubscriber } from '@/lib/database/subscriber';
 
-const baseUrl =
-  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ?? 'https://livefol.io';
-
 export function buildUnsubscribeToken(email: string): string | null {
   const secret = process.env.UNSUBSCRIBE_SECRET;
   if (!secret) {
@@ -41,7 +38,7 @@ export function buildUnsubscribeUrl(email: string): string {
     unsubscribe_token: token,
   });
 
-  return `${baseUrl}/?${params.toString()}`;
+  return `${process.env.HOST}/?${params.toString()}`;
 }
 
 export interface UnsubscribeResult {

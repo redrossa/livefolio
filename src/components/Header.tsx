@@ -1,6 +1,6 @@
 import ThemeToggle from '@/components/ThemeToggle';
 import { Suspense } from 'react';
-import Search from '@/components/Search';
+import SearchForm from '@/components/SearchForm';
 import Link from 'next/link';
 import GitHubStarButton from '@/components/GitHubStarButton';
 
@@ -16,7 +16,7 @@ const Header = () => (
       </div>
     </div>
     <Suspense fallback={<SearchSkeleton />}>
-      <Search />
+      <SearchForm />
     </Suspense>
   </header>
 );

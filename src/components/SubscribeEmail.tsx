@@ -27,7 +27,6 @@ const SubscribeEmail = ({
   strategyId,
 }: Props) => {
   const unsubscribeUrl = buildUnsubscribeUrl(subscriberEmail);
-
   return (
     <Html>
       <Head />

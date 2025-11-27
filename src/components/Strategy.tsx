@@ -2,7 +2,7 @@ import VisitTestfolioButton from '@/components/VisitTestfolioButton';
 import ShareButton from '@/components/ShareButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Fragment } from 'react';
-import Subscribe from '@/components/Subscribe';
+import SubscribeForm from '@/components/SubscribeForm';
 import {
   Allocation,
   evalStrategy,
@@ -81,7 +81,7 @@ export const Strategy = async ({ strategyId }: Props) => {
         )}
       </section>
       <section>
-        <Subscribe strategyId={strategyId} strategyName={evaluated.name} />
+        <SubscribeForm strategyId={strategyId} strategyName={evaluated.name} />
       </section>
     </div>
   );

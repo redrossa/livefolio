@@ -1,5 +1,6 @@
 import sql from './sql';
 import type { Strategy as TestfolioStrategy } from '@/lib/testfolio';
+import { Subscription } from '@/lib/database/subscription';
 
 export interface Strategy {
   id: number;
@@ -88,4 +89,86 @@ export async function listStrategies(): Promise<Strategy[]> {
   `) as StrategyRow[];
 
   return rows.map(mapStrategy);
+}
+
+export type StrategyWithSubscriptions = Strategy & {
+  subscriptions: Subscription[];
+};
+
+interface JoinedRow {
+  // strategy fields
+  strategy_id: number;
+  strategy_link_id: string;
+  strategy_definition: TestfolioStrategy;
+  strategy_date_added: string;
+
+  // subscription fields
+  subscription_id: number;
+  subscription_email: string;
+  subscription_is_verified: boolean;
+  subscription_date_verified: string | null;
+  subscription_strategy_id: number;
+  subscription_verification_id: string;
+}
+
+function mapRowToStrategy(row: JoinedRow): Strategy {
+  return {
+    id: row.strategy_id,
+    linkId: row.strategy_link_id,
+    definition: row.strategy_definition,
+    dateAdded: new Date(row.strategy_date_added),
+  };
+}
+
+function mapRowToSubscription(row: JoinedRow): Subscription {
+  return {
+    id: row.subscription_id,
+    email: row.subscription_email,
+    isVerified: row.subscription_is_verified,
+    dateVerified: row.subscription_date_verified
+      ? new Date(row.subscription_date_verified)
+      : null,
+    strategyId: row.subscription_strategy_id,
+    verificationId: row.subscription_verification_id,
+  };
+}
+
+export async function getStrategiesWithSubscriptions(): Promise<
+  StrategyWithSubscriptions[]
+> {
+  const rows = (await sql`
+    SELECT
+      s.id          AS strategy_id,
+      s.link_id     AS strategy_link_id,
+      s.definition  AS strategy_definition,
+      s.date_added  AS strategy_date_added,
+
+      sub.id            AS subscription_id,
+      sub.email         AS subscription_email,
+      sub.is_verified   AS subscription_is_verified,
+      sub.date_verified AS subscription_date_verified,
+      sub.strategy_id   AS subscription_strategy_id,
+      sub.verification_id AS subscription_verification_id
+    FROM "strategy" AS s
+           JOIN "subscription" AS sub
+                ON sub.strategy_id = s.id
+    WHERE sub.is_verified = true;
+  `) as JoinedRow[];
+
+  const byStrategy = new Map<number, StrategyWithSubscriptions>();
+
+  for (const row of rows) {
+    let entry = byStrategy.get(row.strategy_id);
+    if (!entry) {
+      entry = {
+        ...mapRowToStrategy(row),
+        subscriptions: [],
+      };
+      byStrategy.set(row.strategy_id, entry);
+    }
+
+    entry.subscriptions.push(mapRowToSubscription(row));
+  }
+
+  return Array.from(byStrategy.values());
 }

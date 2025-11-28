@@ -1,38 +1,45 @@
 import * as React from 'react';
 import {
   Body,
+  Button,
+  Column,
   Container,
   Head,
   Heading,
   Hr,
   Html,
+  Link,
   Preview,
+  Row,
+  Section,
   Tailwind,
   Text,
-  Row,
-  Column,
-  Section,
-  Link,
 } from '@react-email/components';
 import { Strategy } from '@/lib/evaluators';
-import { buildUnsubscribeUrl } from '@/lib/email/unsubscribe';
+import { buildUnsubscribeUrl } from '@/lib/email/urls';
+import { formatStrategyUrl } from '@/lib/email/format';
 
 interface Props {
   subscriberEmail: string;
-  evaluatedStrategies: Strategy[];
+  verificationId: string;
+  strategy: Strategy;
 }
 
-const ReallocationEmail = ({ subscriberEmail, evaluatedStrategies }: Props) => {
-  const unsubscribeUrl = buildUnsubscribeUrl(subscriberEmail);
-
+const ReallocationEmail = ({
+  subscriberEmail,
+  verificationId,
+  strategy,
+}: Props) => {
+  const stratUrl = formatStrategyUrl(strategy.linkId);
+  const unsubscribeUrl = buildUnsubscribeUrl(verificationId);
   return (
     <Html>
       <Head />
       <Tailwind>
         <Body className="bg-background">
           <Preview>
-            Some of your subscribed strategies switched allocation at market
-            close today.
+            Your subscribed strategy {strategy.name} switched allocation at
+            market close today.
           </Preview>
           <Container className="mx-auto py-5 pb-12">
             <Heading as="h1" className="mx-auto font-bold">
@@ -40,24 +47,24 @@ const ReallocationEmail = ({ subscriberEmail, evaluatedStrategies }: Props) => {
             </Heading>
             <Text className="text-base leading-6">Hi {subscriberEmail},</Text>
             <Text className="text-base leading-6">
-              The following strategies switched allocations to these holdings at
-              market close today:
+              On market close today, your subscribed strategy{' '}
+              <strong>{strategy.name}</strong> switched allocation to the
+              following holdings:
             </Text>
-            {evaluatedStrategies.map(
-              ({ name, allocation: { holdings }, id }) => (
-                <>
-                  <Heading as="h3" className="mt-8">
-                    <Link href={`https://livefol.io?s=${id}`}>{name}</Link>
-                  </Heading>
-                  <AllocationTable
-                    holdings={holdings.map((h) => ({
-                      ticker: h.ticker.display,
-                      distribution: h.distribution,
-                    }))}
-                  />
-                </>
-              ),
-            )}
+            <AllocationTable
+              holdings={strategy.allocation.holdings.map((h) => ({
+                ticker: h.ticker.display,
+                distribution: h.distribution,
+              }))}
+            />
+            <Section className="text-center mt-6">
+              <Button
+                className="bg-zinc-900 rounded-sm text-white text-base no-underline text-center block p-3"
+                href={stratUrl}
+              >
+                View strategy
+              </Button>
+            </Section>
             <Hr className="border-border my-5" />
             <Text className="text-zinc-400 text-xs">
               © 2025 Livefol.io |{' '}

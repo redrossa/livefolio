@@ -4,14 +4,14 @@ import { toUSMarketDateString } from '@/lib/market/dates';
 
 export interface Strategy {
   name: string;
-  id: string;
+  linkId: string;
   date: Date;
   allocation: Allocation;
 }
 
 export async function evalStrategy(
   strategy: TestfolioStrategy,
-  id: string,
+  linkId: string,
 ): Promise<Strategy> {
   const now = new Date();
   const date = toUSMarketDateString(now);
@@ -38,7 +38,7 @@ export async function evalStrategy(
 
   return {
     name: strategy.name || 'Untitled Strategy',
-    id,
+    linkId: linkId,
     date: now,
     allocation: result,
   };

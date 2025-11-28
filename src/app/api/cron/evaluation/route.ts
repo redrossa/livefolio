@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllSubscribers } from '@/lib/database/subscriber';
 import { PublishBatchRequest } from '@upstash/qstash';
-import { EvaluationPayload } from '@/app/api/subscribers/evaluation/route';
+
+import { getStrategiesWithSubscriptions } from '@/lib/database/strategy';
 import qstash from '@/lib/qstash/qstash';
+import type { EvaluationPayload } from '@/app/api/subscribers/evaluation/route';
 
 const NOTIFY_SUBSCRIBERS_PATH = '/api/subscribers/evaluation';
 
 export async function GET(req: NextRequest) {
+  // Simple auth so only your cron (or QStash cron) can trigger this
   const auth = req.headers.get('authorization');
   const secret = process.env.CRON_SECRET;
 
@@ -17,29 +19,38 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const baseUrl = url.origin;
 
-  const subs = await getAllSubscribers();
-  const totalSubscribers = subs.length;
-  const totalStrategies = [
-    ...new Set(subs.flatMap((s) => s.strategies).map((s) => s.testfolio_id)),
-  ].length;
+  // Each item: Strategy & { subscriptions: Subscription[] }
+  const strategies = await getStrategiesWithSubscriptions();
 
-  const batchRequest: PublishBatchRequest<EvaluationPayload>[] = subs.map(
-    (sub) => ({
+  const totalStrategies = strategies.length;
+  const totalSubscribers = new Set(
+    strategies.flatMap((s) => s.subscriptions.map((sub) => sub.email)),
+  ).size;
+
+  const batchRequest: PublishBatchRequest<EvaluationPayload>[] = strategies.map(
+    (strategy) => ({
       url: `${baseUrl}${NOTIFY_SUBSCRIBERS_PATH}`,
       body: {
-        subscriberEmail: sub.email,
-        strategies: Object.fromEntries(
-          sub.strategies.map((s) => [s.testfolio_id, s.definition]),
-        ),
+        strategyLinkId: strategy.linkId,
+        strategyDefinition: strategy.definition,
+        subscribers: strategy.subscriptions.map((sub) => ({
+          email: sub.email,
+          verificationId: sub.verificationId,
+        })),
       },
     }),
   );
 
   try {
     const responses = await qstash.batchJSON(batchRequest);
-    return NextResponse.json({ totalSubscribers, totalStrategies, responses });
+
+    return NextResponse.json({
+      totalStrategies,
+      totalSubscribers,
+      responses,
+    });
   } catch (error) {
-    console.error(error);
+    console.error('QStash batch error:', error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 },

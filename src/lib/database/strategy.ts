@@ -32,8 +32,10 @@ export async function createStrategy(
 ): Promise<Strategy> {
   const rows = (await sql`
     INSERT INTO "strategy" ("link_id", "definition")
-    VALUES (${linkId}, ${definition}::jsonb)
-    RETURNING
+    VALUES (${linkId}, ${definition}::jsonb) ON CONFLICT ("link_id") DO
+    UPDATE
+      SET "link_id" = EXCLUDED."link_id"
+      RETURNING
       "id",
       "link_id",
       "definition",

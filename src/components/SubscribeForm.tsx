@@ -10,19 +10,22 @@ import {
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import handleSubscribe from '@/lib/actions/handleSubscribe';
+import subscribe from '@/lib/actions/subscribe';
 import { Badge } from '@/components/ui/badge';
 
 interface Props {
-  strategyId: string;
+  strategyLinkId: string;
   strategyName: string;
 }
 
 export default function SubscribeForm({
-  strategyId,
+  strategyLinkId,
   strategyName,
 }: Readonly<Props>) {
-  const [state, formAction] = useActionState(handleSubscribe, { status: null });
+  const [state, formAction] = useActionState(
+    subscribe.bind(null, strategyLinkId, strategyName),
+    { status: null },
+  );
   return (
     <form className="space-y-2 mt-4 max-w-3xl" action={formAction}>
       <Field>
@@ -35,12 +38,12 @@ export default function SubscribeForm({
             </Badge>
           </FieldLabel>
           <FieldDescription>
-            Get notified when a reallocation occurs.
+            Get notified when a reallocation occurs. If you resubscribe to a
+            different strategy, you will stop receiving updates on the previous
+            one.
           </FieldDescription>
         </FieldContent>
         <div className="flex gap-2 flex-col md:flex-row">
-          <Input type="hidden" name="testfolio_id" value={strategyId} />
-          <Input type="hidden" name="testfolio_name" value={strategyName} />
           <Input type="email" name="email" placeholder="Enter your email" />
           <Button type="submit" variant="default">
             Subscribe

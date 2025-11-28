@@ -1,6 +1,6 @@
 import { Strategy } from '@/lib/testfolio';
-import { insertStrategy } from '@/lib/database/strategy';
 import { cache } from 'react';
+import { createStrategy } from '@/lib/database/strategy';
 
 export async function fetchStrategy(id: string) {
   const response = await fetch(`https://testfol.io/api/link/${id}`, {
@@ -16,7 +16,14 @@ export async function fetchStrategy(id: string) {
   }
 
   const payload = await response.json();
-  await insertStrategy(id, payload);
+  try {
+    await createStrategy(id, payload);
+  } catch (error) {
+    if ((error as Error).message === 'Failed to insert strategy') {
+      throw error;
+    }
+    // ignore since strategy already exists
+  }
   return payload as Strategy;
 }
 

@@ -18,14 +18,14 @@ import ClientTimeFormat from '@/components/ClientTimeFormat';
 import { toUTCMarketClose } from '@/lib/market/dates';
 
 interface Props {
-  strategyId: string;
+  strategyLinkId: string;
 }
 
-export const Strategy = async ({ strategyId }: Props) => {
+export const Strategy = async ({ strategyLinkId }: Props) => {
   let evaluated: EvaluatedStrategy;
   try {
-    const strategy = await getStrategy(strategyId);
-    evaluated = await evalStrategy(strategy, strategyId);
+    const strategy = await getStrategy(strategyLinkId);
+    evaluated = await evalStrategy(strategy, strategyLinkId);
   } catch (e) {
     console.error((e as Error).message);
     return <p>Something went wrong evaluating this strategy.</p>;
@@ -81,7 +81,10 @@ export const Strategy = async ({ strategyId }: Props) => {
         )}
       </section>
       <section>
-        <SubscribeForm strategyId={strategyId} strategyName={evaluated.name} />
+        <SubscribeForm
+          strategyLinkId={strategyLinkId}
+          strategyName={evaluated.name}
+        />
       </section>
     </div>
   );

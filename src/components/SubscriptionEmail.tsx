@@ -13,58 +13,55 @@ import {
   Tailwind,
   Text,
 } from '@react-email/components';
-import { buildUnsubscribeUrl } from '@/lib/email/unsubscribe';
+import { formatStrategyName, formatStrategyUrl } from '@/lib/email/format';
+import { buildUnsubscribeUrl } from '@/lib/email/urls';
 
 interface Props {
   subscriberEmail: string;
+  verificationId: string;
   strategyName: string;
-  strategyId: string;
+  strategyLinkId: string;
 }
 
-const SubscribeEmail = ({
+const SubscriptionEmail = ({
   subscriberEmail,
+  verificationId,
   strategyName,
-  strategyId,
+  strategyLinkId,
 }: Props) => {
-  const unsubscribeUrl = buildUnsubscribeUrl(subscriberEmail);
+  const stratUrl = formatStrategyUrl(strategyLinkId);
+  const stratName = formatStrategyName(strategyName);
+  const unsubUrl = buildUnsubscribeUrl(verificationId);
   return (
     <Html>
       <Head />
       <Tailwind>
         <Body className="bg-background">
-          <Preview>
-            Signal alerts are still in development, but you are on the list.
-          </Preview>
+          <Preview>You are now subscribed to {stratName}</Preview>
           <Container className="mx-auto py-5 pb-12">
             <Heading as="h1" className="mx-auto font-bold">
               Livefol.io
             </Heading>
+
             <Text className="text-base leading-6">Hi {subscriberEmail},</Text>
             <Text className="text-base leading-6">
-              Thanks for subscribing to Livefol.io strategy signals for{' '}
-              <strong>{strategyName}</strong>.
+              You are now subscribed to <strong>{stratName}</strong>. We will
+              send you a notification if this strategy switches allocation at US
+              market close.
             </Text>
-            <Text className="text-base leading-6">
-              Signal alerts are still in development, but you are confirmed on
-              the list and will be among the first to know once they are live.
-            </Text>
-            <Section className="text-center">
+
+            <Section className="text-center mt-6">
               <Button
                 className="bg-zinc-900 rounded-sm text-white text-base no-underline text-center block p-3"
-                href={`https://livefol.io?s=${strategyId}`}
+                href={stratUrl}
               >
                 View strategy
               </Button>
             </Section>
-            <Text className="text-base leading-6">
-              Best,
-              <br />
-              The Livefol.io team
-            </Text>
+
             <Hr className="border-border my-5" />
             <Text className="text-zinc-400 text-xs">
-              © 2025 Livefol.io |{' '}
-              <Link href={unsubscribeUrl}>Unsubscribe</Link>
+              © 2025 Livefol.io | <Link href={unsubUrl}>Unsubscribe</Link>
             </Text>
           </Container>
         </Body>
@@ -73,4 +70,4 @@ const SubscribeEmail = ({
   );
 };
 
-export default SubscribeEmail;
+export default SubscriptionEmail;

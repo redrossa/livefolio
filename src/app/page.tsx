@@ -2,20 +2,22 @@ import { Suspense } from 'react';
 import { Metadata, ResolvingMetadata } from 'next';
 import { Strategy, StrategySkeleton } from '@/components/Strategy';
 import { getStrategy } from '@/lib/testfolio';
-import { handleUnsubscribe } from '@/lib/email/unsubscribe';
-import { handleResubscribe } from '@/lib/email/resubscribe';
-import UnsubscribeAlert from '@/components/UnsubscribeAlert';
-import ResubscribeAlert from '@/components/ResubscribeAlert';
+import {
+  deleteSubscriptionByToken,
+  Subscription,
+  updateSubscriptionStrategyByToken,
+  verifySubscriptionByToken,
+} from '@/lib/database/subscription';
+import { redirect, RedirectType } from 'next/navigation';
+import { sendEmail } from '@/lib/email';
+import SubscriptionEmail from '@/components/SubscriptionEmail';
+import { getStrategyById } from '@/lib/database/strategy';
 
 interface Props {
   searchParams: Promise<{
     s?: string;
-    unsubscribe_email?: string;
-    unsubscribe_token?: string;
-    resubscribe_email?: string;
-    resubscribe_token?: string;
-    resubscribe_strategy_id?: string;
-    resubscribe_strategy_name?: string;
+    token?: string;
+    action?: 'verify' | 'unsubscribe' | 'resubscribe';
   }>;
 }
 
@@ -23,12 +25,12 @@ export async function generateMetadata(
   { searchParams }: Readonly<Props>,
   parent: ResolvingMetadata,
 ): Promise<Metadata> {
-  const strategyId = (await searchParams).s;
+  const strategyLinkId = (await searchParams).s;
   const resolvedMetadata = await parent;
 
   let strategy;
   try {
-    strategy = strategyId ? await getStrategy(strategyId) : null;
+    strategy = strategyLinkId ? await getStrategy(strategyLinkId) : null;
   } catch (e) {
     console.error((e as Error).message);
     return {
@@ -46,18 +48,70 @@ export async function generateMetadata(
 
 export default async function Home({ searchParams }: Readonly<Props>) {
   const resolvedParams = await searchParams;
-  const strategyId = resolvedParams.s;
-  const unsubscribeInfo = await handleUnsubscribe(resolvedParams);
-  const resubscribeInfo = await handleResubscribe(resolvedParams);
+  const strategyLinkId = resolvedParams.s;
+  const token = resolvedParams.token;
+  const action = resolvedParams.action;
+
+  if (token && action === 'verify') {
+    await handleVerify(token);
+  } else if (token && action === 'unsubscribe') {
+    await handleUnsubscribe(token);
+  } else if (token && strategyLinkId && action === 'resubscribe') {
+    await handleResubscribe(token, strategyLinkId);
+  }
+
   return (
     <>
-      <UnsubscribeAlert unsubscribe={unsubscribeInfo} />
-      <ResubscribeAlert resubscribe={resubscribeInfo} />
-      {strategyId && (
-        <Suspense key={strategyId} fallback={<StrategySkeleton />}>
-          {<Strategy strategyId={strategyId} />}
+      {strategyLinkId && (
+        <Suspense key={strategyLinkId} fallback={<StrategySkeleton />}>
+          {<Strategy strategyLinkId={strategyLinkId} />}
         </Suspense>
       )}
     </>
   );
+}
+
+async function handleVerify(token: string): Promise<never> {
+  const sub = await verifySubscriptionByToken(token);
+  if (!sub) {
+    redirect('/', RedirectType.replace);
+  }
+
+  return handleSubscribe(sub);
+}
+
+async function handleResubscribe(
+  token: string,
+  strategyLinkId: string,
+): Promise<never> {
+  const sub = await updateSubscriptionStrategyByToken(token, strategyLinkId);
+  if (!sub) {
+    redirect('/', RedirectType.replace);
+  }
+
+  return handleSubscribe(sub);
+}
+
+async function handleSubscribe(sub: Subscription): Promise<never> {
+  const strategy = await getStrategyById(sub.strategyId);
+  if (!strategy) {
+    redirect('/', RedirectType.replace);
+  }
+
+  await sendEmail(
+    sub.email,
+    'You just subscribed to a strategy',
+    <SubscriptionEmail
+      subscriberEmail={sub.email}
+      verificationId={sub.verificationId}
+      strategyName={strategy.definition.name || 'Untitled Strategy'}
+      strategyLinkId={strategy.linkId}
+    />,
+  );
+  redirect(`/?s=${strategy.linkId}`, RedirectType.replace);
+}
+
+async function handleUnsubscribe(token: string): Promise<never> {
+  await deleteSubscriptionByToken(token);
+  redirect('/', RedirectType.replace);
 }

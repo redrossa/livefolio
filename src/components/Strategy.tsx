@@ -14,8 +14,13 @@ import { getStrategy } from '@/lib/testfolio';
 import { ChevronLeft, ChevronRight, Equal, EqualNot } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { clsx } from 'clsx';
-import ClientTimeFormat from '@/components/ClientTimeFormat';
 import { toUTCMarketClose } from '@/lib/market/dates';
+import { resolveLocales } from '@/lib/intl/locales';
+import {
+  dollarFormatter,
+  percentFormatter,
+  percentReturnsFormatter,
+} from '@/lib/intl/number';
 
 interface Props {
   strategyLinkId: string;
@@ -46,22 +51,7 @@ export const Strategy = async ({ strategyLinkId }: Props) => {
       <section>
         <h3>Current Allocation</h3>
         <p className="text-muted-foreground">
-          Today&#39;s evaluation as of{' '}
-          <strong>
-            <ClientTimeFormat
-              formatOptions={{
-                weekday: 'short', // "Sun"
-                month: 'short', // "Nov"
-                day: 'numeric', // "23"
-                year: 'numeric', // "2025"
-                hour: 'numeric', // "7"
-                minute: '2-digit', // "42"
-                hour12: true, // "pm" (uses 12-hour clock with AM/PM)
-              }}
-              date={evaluated.date}
-            />
-          </strong>{' '}
-          is based on previous day&#39;s closing prices.
+          Present evaluation is based on previous day&#39;s closing prices.
         </p>
         <StrategyAllocation allocation={evaluated.allocation} />
       </section>
@@ -109,7 +99,11 @@ export const StrategySkeleton = () => (
   </section>
 );
 
-const StrategyAllocation = ({ allocation }: { allocation: Allocation }) => (
+const StrategyAllocation = async ({
+  allocation,
+}: {
+  allocation: Allocation;
+}) => (
   <Card className="mt-4 rounded-md">
     <CardHeader className="gap-0 border-b border-solid border-border pb-3">
       <p className="muted">Allocation</p>
@@ -125,17 +119,21 @@ const StrategyAllocation = ({ allocation }: { allocation: Allocation }) => (
         <div className="font-bold text-base hidden md:block justify-self-end md:justify-self-auto text-right md:text-left">
           Today&#39;s Returns
         </div>
-        {allocation.holdings.map(({ ticker, distribution, change }, i) => (
-          <Fragment key={`${ticker.display}-${i}`}>
-            <div className="truncate">{ticker.display}</div>
-            <div className="truncate justify-self-center md:justify-self-auto">
-              {percentFormatter.format(distribution)}
-            </div>
-            <div className="justify-self-end md:justify-self-auto">
-              <StrategyPercentChange value={change} />
-            </div>
-          </Fragment>
-        ))}
+        {await Promise.all(
+          allocation.holdings.map(
+            async ({ ticker, distribution, change }, i) => (
+              <Fragment key={`${ticker.display}-${i}`}>
+                <div className="truncate">{ticker.display}</div>
+                <div className="truncate justify-self-center md:justify-self-auto">
+                  {await percentFormatter(distribution)}
+                </div>
+                <div className="justify-self-end md:justify-self-auto">
+                  <StrategyPercentChange value={change} />
+                </div>
+              </Fragment>
+            ),
+          ),
+        )}
       </div>
     </CardContent>
   </Card>
@@ -184,7 +182,7 @@ const StrategySignal = ({ signal }: { signal: Signal }) => {
   );
 };
 
-const StrategyIndicator = ({
+const StrategyIndicator = async ({
   indicator,
   tolerance,
 }: {
@@ -194,10 +192,10 @@ const StrategyIndicator = ({
   let formattedValue: string;
   switch (indicator.unit) {
     case '$':
-      formattedValue = dollarFormatter.format(indicator.value);
+      formattedValue = await dollarFormatter(indicator.value);
       break;
     case '%':
-      formattedValue = percentFormatter.format(indicator.value);
+      formattedValue = await percentFormatter(indicator.value);
       break;
     default:
       formattedValue = indicator.value.toFixed(2);
@@ -205,7 +203,7 @@ const StrategyIndicator = ({
   }
 
   if (tolerance?.value) {
-    formattedValue += ` (${tolerance.sign}${percentFormatter.format(tolerance.value)})`;
+    formattedValue += ` (${tolerance.sign}${await percentFormatter(tolerance.value)})`;
   }
 
   const type = indicator.type;
@@ -213,26 +211,24 @@ const StrategyIndicator = ({
   const delay = indicator.delay ? `${indicator.delay}d Delay` : '';
   const name =
     `${indicator.ticker.display} ${type} ${lookback} ${delay}`.trim();
+  const locales = await resolveLocales();
 
   return (
     <div className="flex flex-col gap-2">
       <span className="text-3xl">{formattedValue}</span>
       <small className="muted">{name}</small>
       <small className="muted">
-        <ClientTimeFormat
-          formatOptions={{
-            month: 'short', // Abbreviated month name (e.g., Nov)
-            day: 'numeric', // Day of the month (e.g., 23)
-            year: 'numeric', // Full year (e.g., 2025)
-          }}
-          date={toUTCMarketClose(indicator.date)}
-        />
+        {new Intl.DateTimeFormat(locales, {
+          month: 'short', // Abbreviated month name (e.g., Nov)
+          day: 'numeric', // Day of the month (e.g., 23)
+          year: 'numeric', // Full year (e.g., 2025)
+        }).format(toUTCMarketClose(indicator.date))}
       </small>
     </div>
   );
 };
 
-const StrategyPercentChange = ({ value }: { value: number | null }) => {
+const StrategyPercentChange = async ({ value }: { value: number | null }) => {
   return (
     <Badge
       variant="secondary"
@@ -243,26 +239,7 @@ const StrategyPercentChange = ({ value }: { value: number | null }) => {
             : 'border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5'),
       )}
     >
-      {value == null ? String(NaN) : percentReturnsFormatter.format(value)}
+      {value == null ? String(NaN) : await percentReturnsFormatter(value)}
     </Badge>
   );
 };
-
-const dollarFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-});
-
-const percentFormatter = new Intl.NumberFormat('en-US', {
-  style: 'unit',
-  unit: 'percent',
-  unitDisplay: 'narrow',
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
-
-const percentReturnsFormatter = new Intl.NumberFormat('en-US', {
-  ...percentFormatter.resolvedOptions(),
-  minimumFractionDigits: 2,
-  signDisplay: 'exceptZero',
-});

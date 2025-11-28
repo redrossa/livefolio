@@ -16,14 +16,8 @@ export async function fetchStrategy(id: string) {
   }
 
   const payload = await response.json();
-  try {
-    await createStrategy(id, payload);
-  } catch (error) {
-    if ((error as Error).message === 'Failed to insert strategy') {
-      throw error;
-    }
-    // ignore since strategy already exists
-  }
+  await createStrategy(id, payload);
+
   return payload as Strategy;
 }
 

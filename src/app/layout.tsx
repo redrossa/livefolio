@@ -43,7 +43,9 @@ export default function RootLayout({
               <Header />
               {children}
               <Analytics
-                mode={(process.env.MODE as AnalyticsProps['mode']) ?? 'auto'}
+                mode={
+                  (process.env.NODE_ENV as AnalyticsProps['mode']) ?? 'auto'
+                }
               />
               <Footer />
             </main>

@@ -33,6 +33,7 @@ export async function createStrategy(
   const rows = (await sql`
     INSERT INTO "strategy" ("link_id", "definition")
     VALUES (${linkId}, ${definition}::jsonb)
+    ON CONFLICT (link_id) DO NOTHING
     RETURNING
       "id",
       "link_id",

@@ -46,8 +46,8 @@ const SubscriptionEmail = ({
             <Text className="text-base leading-6">Hi {subscriberEmail},</Text>
             <Text className="text-base leading-6">
               You are now subscribed to <strong>{stratName}</strong>. We will
-              send you a notification if this strategy switches allocation at US
-              market close.
+              send you notifications when this strategy switches allocation on
+              market close ET.
             </Text>
 
             <Section className="text-center mt-6">

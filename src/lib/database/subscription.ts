@@ -3,7 +3,6 @@ import sql from './sql';
 export interface Subscription {
   id: number;
   email: string;
-  isVerified: boolean;
   dateVerified: Date | null;
   strategyId: number;
   verificationId: string;
@@ -13,7 +12,6 @@ export interface Subscription {
 interface SubscriptionRow {
   id: number;
   email: string;
-  is_verified: boolean;
   date_verified: string | null;
   strategy_id: number;
   verification_id: string;
@@ -23,7 +21,6 @@ function mapSubscription(row: SubscriptionRow): Subscription {
   return {
     id: row.id,
     email: row.email,
-    isVerified: row.is_verified,
     dateVerified: row.date_verified ? new Date(row.date_verified) : null,
     strategyId: row.strategy_id,
     verificationId: row.verification_id,
@@ -54,7 +51,6 @@ export async function insertOrUpdateSubscriptionByEmail(
     RETURNING
       "id",
       "email",
-      "is_verified",
       "date_verified",
       "strategy_id",
       "verification_id";
@@ -78,7 +74,6 @@ export async function getSubscriptionByVerificationId(
     SELECT
       "id",
       "email",
-      "is_verified",
       "date_verified",
       "strategy_id",
       "verification_id"
@@ -99,13 +94,11 @@ export async function verifySubscriptionByToken(
   const rows = (await sql`
     UPDATE "subscription"
     SET
-      "is_verified"   = true,
       "date_verified" = NOW()
     WHERE "verification_id" = ${token}
     RETURNING
       "id",
       "email",
-      "is_verified",
       "date_verified",
       "strategy_id",
       "verification_id";
@@ -145,7 +138,6 @@ export async function updateSubscriptionStrategyByToken(
     RETURNING
       s."id",
       s."email",
-      s."is_verified",
       s."date_verified",
       s."strategy_id",
       s."verification_id";
@@ -178,7 +170,6 @@ export async function getSubscriptionByEmail(
     SELECT
       "id",
       "email",
-      "is_verified",
       "date_verified",
       "strategy_id",
       "verification_id"

@@ -43,7 +43,7 @@ export default async function subscribe(
     const existing = await getSubscriptionByEmail(email);
 
     // CASE 1 & 2: new email OR existing but not verified
-    if (!existing?.isVerified) {
+    if (!existing?.dateVerified) {
       // Insert or update subscription + strategy immediately
       const subscription = await insertOrUpdateSubscriptionByEmail(
         email,

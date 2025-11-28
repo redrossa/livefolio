@@ -105,7 +105,6 @@ interface JoinedRow {
   // subscription fields
   subscription_id: number;
   subscription_email: string;
-  subscription_is_verified: boolean;
   subscription_date_verified: string | null;
   subscription_strategy_id: number;
   subscription_verification_id: string;
@@ -124,7 +123,6 @@ function mapRowToSubscription(row: JoinedRow): Subscription {
   return {
     id: row.subscription_id,
     email: row.subscription_email,
-    isVerified: row.subscription_is_verified,
     dateVerified: row.subscription_date_verified
       ? new Date(row.subscription_date_verified)
       : null,
@@ -145,14 +143,13 @@ export async function getStrategiesWithSubscriptions(): Promise<
 
       sub.id            AS subscription_id,
       sub.email         AS subscription_email,
-      sub.is_verified   AS subscription_is_verified,
       sub.date_verified AS subscription_date_verified,
       sub.strategy_id   AS subscription_strategy_id,
       sub.verification_id AS subscription_verification_id
     FROM "strategy" AS s
            JOIN "subscription" AS sub
                 ON sub.strategy_id = s.id
-    WHERE sub.is_verified = true;
+    WHERE sub.date_verified IS NOT NULL;
   `) as JoinedRow[];
 
   const byStrategy = new Map<number, StrategyWithSubscriptions>();

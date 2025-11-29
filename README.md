@@ -1,40 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Livefol.io
 
-|Holdings|Distributions|
-|--------|-------------|
-|
+A tool to help you implement [Testfol.io](https://testfol.io/tactical) tactical allocation strategy by evaluating with
+current market data.
 
 ## Getting Started
 
-First, run the development server:
+Steps to set up a local instance of [Livefol.io](https://livefol.io) for development:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Install dependencies
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+   ```shell
+   npm i
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+2. Fill in environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   ```shell
+   cp .env.example .env.local
+   ```
 
-## Learn More
+3. (Optionally) Run QStash development server. This is to develop CRON jobs, which spawns background jobs handled by
+   QStash.
 
-To learn more about Next.js, take a look at the following resources:
+   ```shell
+   npx @upstash/qstash-cli@latest dev
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+4. Run development server
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   ```shell
+   npm run dev
+   ```
 
-## Deploy on Vercel
+## The Motivation
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+I came across the subreddit [r/LETFs](https://www.reddit.com/r/LETFs/) during my regular rabbit-hole binge on
+investments. While lurking, I read upon [this](https://testfol.io/tactical?s=drGlXDcTL4r) strategy that truly perplexed
+me. It managed to absolutely outperform the benchmark S&P 500 in terms of CAGR and max drawdown, and held up honorably
+during market crises of 2008 and 2022.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Although the performance was impressive, the signals and allocations set for this strategy were all Greek to most of the
+commenters, including me. I wanted to implement it for testing with a small account portfolio. First step to studying it
+was to implement the signals, so I tried to build them on Trading view, a popular tool to build custom signals and
+alerts. The next step was to evaluate the signals into the allocation conditions. With three different signals, each
+with different indicators, evaluating four different allocations with 3 conditionals, it just became a headache to
+implement. Not only do you become overwhelmed with signals, but the overwhelmingness also leads to emotional setback,
+making you doubt your evaluations and therefore not take actions following the strategy.
+
+I naturally thought it would be easier if there is a tool that can convert Testfol.io signals into TradingView
+signals. Taking it a step further, what if there is a tool that just tells you exactly what assets to hold right now
+following a Testfol.io strategy. That's when the idea of Livefol.io was born.

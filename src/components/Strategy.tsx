@@ -1,10 +1,8 @@
 import VisitTestfolioButton from '@/components/VisitTestfolioButton';
 import ShareButton from '@/components/ShareButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Fragment } from 'react';
 import SubscribeForm from '@/components/SubscribeForm';
 import {
-  Allocation,
   evalStrategy,
   Indicator,
   Signal,
@@ -12,15 +10,10 @@ import {
 } from '@/lib/evaluators';
 import { getStrategy } from '@/lib/testfolio';
 import { ChevronLeft, ChevronRight, Equal, EqualNot } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { clsx } from 'clsx';
 import { toUTCMarketClose } from '@/lib/market/dates';
 import { resolveLocales } from '@/lib/intl/locales';
-import {
-  dollarFormatter,
-  percentFormatter,
-  percentReturnsFormatter,
-} from '@/lib/intl/number';
+import { dollarFormatter, percentFormatter } from '@/lib/intl/number';
+import { Allocation } from '@/components/Allocation';
 
 interface Props {
   strategyLinkId: string;
@@ -53,7 +46,7 @@ export const Strategy = async ({ strategyLinkId }: Props) => {
         <p className="text-muted-foreground">
           Present evaluation is based on previous day&#39;s closing prices.
         </p>
-        <StrategyAllocation allocation={evaluated.allocation} />
+        <Allocation allocation={evaluated.allocation} />
       </section>
       <section>
         <h3>Active Signals</h3>
@@ -97,46 +90,6 @@ export const StrategySkeleton = () => (
       <div className="animate-pulse bg-secondary rounded-xl h-48" />
     </div>
   </section>
-);
-
-const StrategyAllocation = async ({
-  allocation,
-}: {
-  allocation: Allocation;
-}) => (
-  <Card className="mt-4 rounded-md">
-    <CardHeader className="gap-0 border-b border-solid border-border pb-3">
-      <p className="muted">Allocation</p>
-      <div className="flex items-center justify-between md:justify-start gap-2 overflow-hidden">
-        <h3 className="mt-0 truncate">{allocation.name}</h3>
-        <StrategyPercentChange value={allocation.change} />
-      </div>
-    </CardHeader>
-    <CardContent>
-      <div className="grid grid-cols-3 gap-4 text-lg">
-        <div className="font-bold text-base hidden md:block">Holdings</div>
-        <div className="font-bold text-base hidden md:block">Distributions</div>
-        <div className="font-bold text-base hidden md:block justify-self-end md:justify-self-auto text-right md:text-left">
-          Today&#39;s Returns
-        </div>
-        {await Promise.all(
-          allocation.holdings.map(
-            async ({ ticker, distribution, change }, i) => (
-              <Fragment key={`${ticker.display}-${i}`}>
-                <div className="truncate">{ticker.display}</div>
-                <div className="truncate justify-self-center md:justify-self-auto">
-                  {await percentFormatter(distribution)}
-                </div>
-                <div className="justify-self-end md:justify-self-auto">
-                  <StrategyPercentChange value={change} />
-                </div>
-              </Fragment>
-            ),
-          ),
-        )}
-      </div>
-    </CardContent>
-  </Card>
 );
 
 const StrategySignal = ({ signal }: { signal: Signal }) => {
@@ -189,13 +142,14 @@ const StrategyIndicator = async ({
   indicator: Indicator;
   tolerance?: { sign: '-' | '+' | '±'; value: number };
 }) => {
+  const locales = await resolveLocales();
   let formattedValue: string;
   switch (indicator.unit) {
     case '$':
-      formattedValue = await dollarFormatter(indicator.value);
+      formattedValue = dollarFormatter(locales, indicator.value);
       break;
     case '%':
-      formattedValue = await percentFormatter(indicator.value);
+      formattedValue = percentFormatter(locales, indicator.value);
       break;
     default:
       formattedValue = indicator.value.toFixed(2);
@@ -203,7 +157,7 @@ const StrategyIndicator = async ({
   }
 
   if (tolerance?.value) {
-    formattedValue += ` (${tolerance.sign}${await percentFormatter(tolerance.value)})`;
+    formattedValue += ` (${tolerance.sign}${percentFormatter(locales, tolerance.value)})`;
   }
 
   const type = indicator.type;
@@ -211,7 +165,6 @@ const StrategyIndicator = async ({
   const delay = indicator.delay ? `${indicator.delay}d Delay` : '';
   const name =
     `${indicator.ticker.display} ${type} ${lookback} ${delay}`.trim();
-  const locales = await resolveLocales();
 
   return (
     <div className="flex flex-col gap-2">
@@ -225,21 +178,5 @@ const StrategyIndicator = async ({
         }).format(toUTCMarketClose(indicator.date))}
       </small>
     </div>
-  );
-};
-
-const StrategyPercentChange = async ({ value }: { value: number | null }) => {
-  return (
-    <Badge
-      variant="secondary"
-      className={clsx(
-        value &&
-          (value < 0
-            ? 'bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive border-none focus-visible:outline-none'
-            : 'border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5'),
-      )}
-    >
-      {value == null ? String(NaN) : await percentReturnsFormatter(value)}
-    </Badge>
   );
 };

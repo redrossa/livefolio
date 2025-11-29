@@ -1,7 +1,4 @@
-import { resolveLocales } from '@/lib/intl/locales';
-
-export async function dollarFormatter(value: number) {
-  const locales = await resolveLocales();
+export function dollarFormatter(locales: Intl.LocalesArgument, value: number) {
   const dollarFormatter = new Intl.NumberFormat(locales, {
     style: 'currency',
     currency: 'USD',
@@ -9,8 +6,7 @@ export async function dollarFormatter(value: number) {
   return dollarFormatter.format(value);
 }
 
-export async function percentFormatter(value: number) {
-  const locales = await resolveLocales();
+export function percentFormatter(locales: Intl.LocalesArgument, value: number) {
   const percentFormatter = new Intl.NumberFormat(locales, {
     style: 'unit',
     unit: 'percent',
@@ -21,8 +17,10 @@ export async function percentFormatter(value: number) {
   return percentFormatter.format(value);
 }
 
-export async function percentReturnsFormatter(value: number) {
-  const locales = await resolveLocales();
+export function percentReturnsFormatter(
+  locales: Intl.LocalesArgument,
+  value: number,
+) {
   const percentFormatter = new Intl.NumberFormat(locales, {
     style: 'unit',
     unit: 'percent',

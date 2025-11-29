@@ -5,15 +5,12 @@ import {
 } from '@/lib/testfolio';
 import { evalTicker, Ticker } from '@/lib/evaluators/ticker';
 import { evalSignal, Signal } from '@/lib/evaluators/signal';
-import { fetchYahooQuote } from '@/lib/series/yahoo';
 
 export interface Allocation {
   name: string;
-  change: number;
   holdings: Array<{
     ticker: Ticker;
     distribution: number;
-    change: number | null;
   }>;
   signals: Signal[];
 }
@@ -49,32 +46,17 @@ export async function evalAllocation(
     allocation.nots,
   );
 
-  let allocationChange: number = 0;
-  const holdings = await Promise.all(
-    allocation.tickers.map(async (t) => {
-      const ticker = evalTicker(t.ticker);
-      let change: number | null;
-      try {
-        const quote = await fetchYahooQuote(ticker.symbol);
-        const marketReturn = quote?.regularMarketChangePercent;
-        change = marketReturn == null ? null : marketReturn * ticker.leverage;
-        allocationChange += (change ?? 0) * (t.percent / 100);
-      } catch {
-        change = null;
-      }
-      return {
-        ticker,
-        distribution: t.percent,
-        change,
-      };
-    }),
-  );
+  const holdings = allocation.tickers.map((t) => ({
+    ticker: evalTicker(t.ticker),
+    distribution: t.percent,
+  }));
+
+  const sigs = short.map(({ name }) => signalMap[name]);
 
   return {
     name: allocation.name,
-    change: allocationChange,
     holdings,
-    signals: short.map(({ name }) => signalMap[name]),
+    signals: sigs,
   };
 }
 

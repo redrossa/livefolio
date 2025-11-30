@@ -3,10 +3,10 @@
 import { Badge } from '@/components/ui/badge';
 import { clsx } from 'clsx';
 import { percentReturnsFormatter } from '@/lib/intl/number';
-import { resolveLocales } from '@/lib/intl/locales';
 
 import { cache } from 'react';
 import { fetchYahooQuote } from '@/lib/series/yahoo';
+import resolveLocales from '@/lib/headers/resolveLocales';
 
 const getQuoteChangePercent = cache(async (symbol: string) => {
   const quote = await fetchYahooQuote(symbol);

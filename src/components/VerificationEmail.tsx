@@ -13,8 +13,11 @@ import {
   Tailwind,
   Text,
 } from '@react-email/components';
-import { formatStrategyName, formatStrategyUrl } from '@/lib/email/format';
-import { buildUnsubscribeUrl, buildVerificationUrl } from '@/lib/email/urls';
+import {
+  buildStrategyUrl,
+  buildUnsubscribeUrl,
+  buildVerificationUrl,
+} from '@/lib/email/urls';
 
 interface Props {
   subscriberEmail: string;
@@ -23,23 +26,25 @@ interface Props {
   strategyLinkId: string;
 }
 
-const VerificationEmail = ({
+const VerificationEmail = async ({
   subscriberEmail,
   verificationId,
   strategyName,
   strategyLinkId,
 }: Props) => {
-  const verificationUrl = buildVerificationUrl(verificationId, strategyLinkId);
-  const unsubUrl = buildUnsubscribeUrl(verificationUrl);
-  const stratUrl = formatStrategyUrl(strategyLinkId);
-  const stratName = formatStrategyName(strategyName);
+  const verificationUrl = await buildVerificationUrl(
+    verificationId,
+    strategyLinkId,
+  );
+  const unsubUrl = await buildUnsubscribeUrl(verificationUrl);
+  const stratUrl = await buildStrategyUrl(strategyLinkId);
   return (
     <Html>
       <Head />
       <Tailwind>
         <Body className="bg-background">
           <Preview>
-            Verify email to subscribe to strategy &#34;{stratName}&#34;
+            Verify email to subscribe to strategy &#34;{strategyName}&#34;
           </Preview>
           <Container className="mx-auto py-5 pb-12">
             <Heading as="h1" className="mx-auto font-bold">
@@ -50,7 +55,7 @@ const VerificationEmail = ({
               Thanks for requesting to subscribe to Livefol.io strategy signals
               for{' '}
               <Link href={stratUrl}>
-                <strong>{stratName}</strong>
+                <strong>{strategyName}</strong>
               </Link>
               .
             </Text>

@@ -4,7 +4,7 @@ import { headers } from 'next/headers';
 
 const DEFAULT_LOCALE = 'en-US';
 
-export async function resolveLocales(): Promise<Intl.LocalesArgument> {
+export default async function resolveLocales(): Promise<Intl.LocalesArgument> {
   const headersList = await headers();
   const nh = Object.fromEntries(headersList.entries());
   const languages = new Negotiator({

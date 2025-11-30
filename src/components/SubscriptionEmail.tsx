@@ -13,8 +13,7 @@ import {
   Tailwind,
   Text,
 } from '@react-email/components';
-import { formatStrategyName, formatStrategyUrl } from '@/lib/email/format';
-import { buildUnsubscribeUrl } from '@/lib/email/urls';
+import { buildStrategyUrl, buildUnsubscribeUrl } from '@/lib/email/urls';
 
 interface Props {
   subscriberEmail: string;
@@ -23,22 +22,21 @@ interface Props {
   strategyLinkId: string;
 }
 
-const SubscriptionEmail = ({
+const SubscriptionEmail = async ({
   subscriberEmail,
   verificationId,
   strategyName,
   strategyLinkId,
 }: Props) => {
-  const stratUrl = formatStrategyUrl(strategyLinkId);
-  const stratName = formatStrategyName(strategyName);
-  const unsubUrl = buildUnsubscribeUrl(verificationId);
+  const stratUrl = await buildStrategyUrl(strategyLinkId);
+  const unsubUrl = await buildUnsubscribeUrl(verificationId);
   return (
     <Html>
       <Head />
       <Tailwind>
         <Body className="bg-background">
           <Preview>
-            You subscribed to &#34;{stratName}&#34;. We&#39;ll send you a
+            You subscribed to &#34;{strategyName}&#34;. We&#39;ll send you a
             notification whenever this strategy changes allocation.
           </Preview>
           <Container className="mx-auto py-5 pb-12">
@@ -48,7 +46,7 @@ const SubscriptionEmail = ({
 
             <Text className="text-base leading-6">Hi {subscriberEmail},</Text>
             <Text className="text-base leading-6">
-              You are now subscribed to <strong>{stratName}</strong>. We will
+              You are now subscribed to <strong>{strategyName}</strong>. We will
               send you notifications when this strategy switches allocation on
               market close ET.
             </Text>

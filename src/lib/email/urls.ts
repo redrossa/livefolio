@@ -1,7 +1,17 @@
-export function buildVerificationUrl(
+import resolveOrigin from '@/lib/headers/resolveOrigin';
+
+export async function buildStrategyUrl(strategyLinkId: string) {
+  const origin = await resolveOrigin();
+  const searchParams = new URLSearchParams();
+  searchParams.set('s', strategyLinkId);
+  return `${origin}?${searchParams.toString()}`;
+}
+
+export async function buildVerificationUrl(
   verificationId: string,
   strategyLinkId?: string,
 ) {
+  const origin = await resolveOrigin();
   const searchParams = new URLSearchParams();
   searchParams.set('token', verificationId);
   searchParams.set('action', 'verify');
@@ -9,13 +19,14 @@ export function buildVerificationUrl(
     searchParams.set('s', strategyLinkId);
   }
 
-  return `${process.env.ORIGIN}?${searchParams.toString()}`;
+  return `${origin}?${searchParams.toString()}`;
 }
 
-export function buildUnsubscribeUrl(
+export async function buildUnsubscribeUrl(
   verificationId: string,
   strategyLinkId?: string,
 ) {
+  const origin = await resolveOrigin();
   const searchParams = new URLSearchParams();
   searchParams.set('token', verificationId);
   searchParams.set('action', 'unsubscribe');
@@ -23,13 +34,14 @@ export function buildUnsubscribeUrl(
     searchParams.set('s', strategyLinkId);
   }
 
-  return `${process.env.ORIGIN}?${searchParams.toString()}`;
+  return `${origin}?${searchParams.toString()}`;
 }
 
-export function buildResubscribeUrl(
+export async function buildResubscribeUrl(
   verificationId: string,
   strategyLinkId: string,
 ) {
+  const origin = await resolveOrigin();
   const searchParams = new URLSearchParams();
   searchParams.set('token', verificationId);
   searchParams.set('action', 'resubscribe');
@@ -37,5 +49,5 @@ export function buildResubscribeUrl(
     searchParams.set('s', strategyLinkId);
   }
 
-  return `${process.env.ORIGIN}?${searchParams.toString()}`;
+  return `${origin}?${searchParams.toString()}`;
 }

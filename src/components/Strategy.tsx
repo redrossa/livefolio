@@ -11,9 +11,9 @@ import {
 import { getStrategy } from '@/lib/testfolio';
 import { ChevronLeft, ChevronRight, Equal, EqualNot } from 'lucide-react';
 import { toUTCMarketClose } from '@/lib/market/dates';
-import { resolveLocales } from '@/lib/intl/locales';
 import { dollarFormatter, percentFormatter } from '@/lib/intl/number';
 import { Allocation } from '@/components/Allocation';
+import resolveLocales from '@/lib/headers/resolveLocales';
 
 interface Props {
   strategyLinkId: string;

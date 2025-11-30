@@ -7,6 +7,7 @@ export interface Strategy {
   linkId: string;
   definition: TestfolioStrategy;
   dateAdded: Date;
+  formattedName: string;
 }
 
 // Raw DB row (snake_case, timestamptz as string)
@@ -15,6 +16,7 @@ interface StrategyRow {
   link_id: string;
   definition: TestfolioStrategy;
   date_added: string;
+  formatted_name: string;
 }
 
 function mapStrategy(row: StrategyRow): Strategy {
@@ -23,6 +25,7 @@ function mapStrategy(row: StrategyRow): Strategy {
     linkId: row.link_id,
     definition: row.definition,
     dateAdded: new Date(row.date_added),
+    formattedName: row.formatted_name,
   };
 }
 
@@ -39,7 +42,8 @@ export async function createStrategy(
       "id",
       "link_id",
       "definition",
-      "date_added";
+      "date_added",
+      "formatted_name";
   `) as StrategyRow[];
 
   if (rows.length === 0) {
@@ -55,10 +59,13 @@ export async function getStrategyById(id: number): Promise<Strategy | null> {
       "id",
       "link_id",
       "definition",
-      "date_added"
+      "date_added",
+      "formatted_name"
     FROM "strategy"
     WHERE "id" = ${id};
   `) as StrategyRow[];
+
+  console.log(rows);
 
   return rows.length ? mapStrategy(rows[0]) : null;
 }
@@ -71,7 +78,8 @@ export async function getStrategyByLinkId(
       "id",
       "link_id",
       "definition",
-      "date_added"
+      "date_added",
+      "formatted_name"
     FROM "strategy"
     WHERE "link_id" = ${linkId};
   `) as StrategyRow[];
@@ -85,7 +93,8 @@ export async function listStrategies(): Promise<Strategy[]> {
       "id",
       "link_id",
       "definition",
-      "date_added"
+      "date_added",
+      "formatted_name"
     FROM "strategy"
     ORDER BY "date_added" DESC;
   `) as StrategyRow[];
@@ -103,6 +112,7 @@ interface JoinedRow {
   strategy_link_id: string;
   strategy_definition: TestfolioStrategy;
   strategy_date_added: string;
+  strategy_formatted_name: string;
 
   // subscription fields
   subscription_id: number;
@@ -118,6 +128,7 @@ function mapRowToStrategy(row: JoinedRow): Strategy {
     linkId: row.strategy_link_id,
     definition: row.strategy_definition,
     dateAdded: new Date(row.strategy_date_added),
+    formattedName: row.strategy_formatted_name,
   };
 }
 
@@ -138,10 +149,11 @@ export async function getStrategiesWithSubscriptions(): Promise<
 > {
   const rows = (await sql`
     SELECT
-      s.id          AS strategy_id,
-      s.link_id     AS strategy_link_id,
-      s.definition  AS strategy_definition,
-      s.date_added  AS strategy_date_added,
+      s.id              AS strategy_id,
+      s.link_id         AS strategy_link_id,
+      s.definition      AS strategy_definition,
+      s.date_added      AS strategy_date_added,
+      s.formatted_name  AS strategy_formatted_name,
 
       sub.id            AS subscription_id,
       sub.email         AS subscription_email,

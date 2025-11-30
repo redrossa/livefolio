@@ -13,8 +13,11 @@ import {
   Tailwind,
   Text,
 } from '@react-email/components';
-import { formatStrategyName, formatStrategyUrl } from '@/lib/email/format';
-import { buildResubscribeUrl, buildUnsubscribeUrl } from '@/lib/email/urls';
+import {
+  buildResubscribeUrl,
+  buildStrategyUrl,
+  buildUnsubscribeUrl,
+} from '@/lib/email/urls';
 
 interface StrategyInfo {
   id: string;
@@ -28,27 +31,26 @@ interface Props {
   newStrategy: StrategyInfo;
 }
 
-const ResubscriptionEmail = ({
+const ResubscriptionEmail = async ({
   subscriberEmail,
   verificationId,
   oldStrategy,
   newStrategy,
 }: Props) => {
-  const oldStratUrl = formatStrategyUrl(oldStrategy.id);
-  const oldStratName = formatStrategyName(oldStrategy.name);
-  const newStratUrl = formatStrategyUrl(newStrategy.id);
-  const newStratName = formatStrategyName(newStrategy.name);
-  const unsubUrl = buildUnsubscribeUrl(verificationId);
-  const resubUrl = buildResubscribeUrl(verificationId, newStrategy.id);
+  const oldStratUrl = await buildStrategyUrl(oldStrategy.id);
+  const newStratUrl = await buildStrategyUrl(newStrategy.id);
+  const unsubUrl = await buildUnsubscribeUrl(verificationId);
+  const resubUrl = await buildResubscribeUrl(verificationId, newStrategy.id);
   return (
     <Html>
       <Head />
       <Tailwind>
         <Body className="bg-background">
           <Preview>
-            You requested to subscribe to strategy &#34;{newStratName}&#34;, but
-            you are already subscribed to &#34;{oldStratName}&#34;. You can only
-            subscribe to one strategy at a time. Confirm to change subscription.
+            You requested to subscribe to strategy &#34;{newStrategy.name}&#34;,
+            but you are already subscribed to &#34;{oldStrategy.name}&#34;. You
+            can only subscribe to one strategy at a time. Confirm to change
+            subscription.
           </Preview>
           <Container className="mx-auto py-5 pb-12">
             <Heading as="h1" className="mx-auto font-bold">
@@ -59,7 +61,7 @@ const ResubscriptionEmail = ({
             <Text className="text-base leading-6">
               You requested to subscribe to{' '}
               <Link href={newStratUrl}>
-                <strong>{newStratName}</strong>
+                <strong>{newStrategy.name}</strong>
               </Link>
               .
             </Text>
@@ -67,7 +69,7 @@ const ResubscriptionEmail = ({
             <Text className="text-base leading-6">
               You are currently subscribed to{' '}
               <Link href={oldStratUrl}>
-                <strong>{oldStratName}</strong>
+                <strong>{oldStrategy.name}</strong>
               </Link>
               .
             </Text>

@@ -102,7 +102,7 @@ export default async function subscribe(
         verificationId: existing.verificationId,
         oldStrategy: {
           id: oldStrategy.linkId, // strategy.link_id
-          name: oldStrategy.definition.name, // or derive a nicer name if you have one
+          name: oldStrategy.formattedName, // or derive a nicer name if you have one
         },
         newStrategy: {
           id: strategyLinkId, // strategy.link_id (same as strategyLinkId)

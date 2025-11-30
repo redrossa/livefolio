@@ -16,8 +16,7 @@ import {
   Text,
 } from '@react-email/components';
 import { Strategy } from '@/lib/evaluators';
-import { buildUnsubscribeUrl } from '@/lib/email/urls';
-import { formatStrategyUrl } from '@/lib/email/format';
+import { buildStrategyUrl, buildUnsubscribeUrl } from '@/lib/email/urls';
 
 interface Props {
   subscriberEmail: string;
@@ -32,13 +31,13 @@ function joinWithAnd(items: string[]): string {
   return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
 }
 
-const ReallocationEmail = ({
+const ReallocationEmail = async ({
   subscriberEmail,
   verificationId,
   strategy,
 }: Props) => {
-  const stratUrl = formatStrategyUrl(strategy.linkId);
-  const unsubscribeUrl = buildUnsubscribeUrl(verificationId);
+  const stratUrl = await buildStrategyUrl(strategy.linkId);
+  const unsubscribeUrl = await buildUnsubscribeUrl(verificationId);
   return (
     <Html>
       <Head />

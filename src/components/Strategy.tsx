@@ -1,10 +1,8 @@
 import VisitTestfolioButton from '@/components/VisitTestfolioButton';
 import ShareButton from '@/components/ShareButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Fragment } from 'react';
-import Subscribe from '@/components/Subscribe';
+import SubscribeForm from '@/components/SubscribeForm';
 import {
-  Allocation,
   evalStrategy,
   Indicator,
   Signal,
@@ -12,20 +10,20 @@ import {
 } from '@/lib/evaluators';
 import { getStrategy } from '@/lib/testfolio';
 import { ChevronLeft, ChevronRight, Equal, EqualNot } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { clsx } from 'clsx';
-import ClientTimeFormat from '@/components/ClientTimeFormat';
 import { toUTCMarketClose } from '@/lib/market/dates';
+import { dollarFormatter, percentFormatter } from '@/lib/intl/number';
+import { Allocation } from '@/components/Allocation';
+import resolveLocales from '@/lib/headers/resolveLocales';
 
 interface Props {
-  strategyId: string;
+  strategyLinkId: string;
 }
 
-export const Strategy = async ({ strategyId }: Props) => {
+export const Strategy = async ({ strategyLinkId }: Props) => {
   let evaluated: EvaluatedStrategy;
   try {
-    const strategy = await getStrategy(strategyId);
-    evaluated = await evalStrategy(strategy, strategyId);
+    const strategy = await getStrategy(strategyLinkId);
+    evaluated = await evalStrategy(strategy, strategyLinkId);
   } catch (e) {
     console.error((e as Error).message);
     return <p>Something went wrong evaluating this strategy.</p>;
@@ -46,24 +44,9 @@ export const Strategy = async ({ strategyId }: Props) => {
       <section>
         <h3>Current Allocation</h3>
         <p className="text-muted-foreground">
-          Today&#39;s evaluation as of{' '}
-          <strong>
-            <ClientTimeFormat
-              formatOptions={{
-                weekday: 'short', // "Sun"
-                month: 'short', // "Nov"
-                day: 'numeric', // "23"
-                year: 'numeric', // "2025"
-                hour: 'numeric', // "7"
-                minute: '2-digit', // "42"
-                hour12: true, // "pm" (uses 12-hour clock with AM/PM)
-              }}
-              date={evaluated.date}
-            />
-          </strong>{' '}
-          is based on previous day&#39;s closing prices.
+          Present evaluation is based on previous day&#39;s closing prices.
         </p>
-        <StrategyAllocation allocation={evaluated.allocation} />
+        <Allocation allocation={evaluated.allocation} />
       </section>
       <section>
         <h3>Active Signals</h3>
@@ -81,7 +64,10 @@ export const Strategy = async ({ strategyId }: Props) => {
         )}
       </section>
       <section>
-        <Subscribe strategyId={strategyId} strategyName={evaluated.name} />
+        <SubscribeForm
+          strategyLinkId={strategyLinkId}
+          strategyName={evaluated.name}
+        />
       </section>
     </div>
   );
@@ -104,38 +90,6 @@ export const StrategySkeleton = () => (
       <div className="animate-pulse bg-secondary rounded-xl h-48" />
     </div>
   </section>
-);
-
-const StrategyAllocation = ({ allocation }: { allocation: Allocation }) => (
-  <Card className="mt-4 rounded-md">
-    <CardHeader className="gap-0 border-b border-solid border-border pb-3">
-      <p className="muted">Allocation</p>
-      <div className="flex items-center justify-between md:justify-start gap-2 overflow-hidden">
-        <h3 className="mt-0 truncate">{allocation.name}</h3>
-        <StrategyPercentChange value={allocation.change} />
-      </div>
-    </CardHeader>
-    <CardContent>
-      <div className="grid grid-cols-3 gap-4 text-lg">
-        <div className="font-bold text-base hidden md:block">Holdings</div>
-        <div className="font-bold text-base hidden md:block">Distributions</div>
-        <div className="font-bold text-base hidden md:block justify-self-end md:justify-self-auto text-right md:text-left">
-          Today&#39;s Returns
-        </div>
-        {allocation.holdings.map(({ ticker, distribution, change }, i) => (
-          <Fragment key={`${ticker.display}-${i}`}>
-            <div className="truncate">{ticker.display}</div>
-            <div className="truncate justify-self-center md:justify-self-auto">
-              {percentFormatter.format(distribution)}
-            </div>
-            <div className="justify-self-end md:justify-self-auto">
-              <StrategyPercentChange value={change} />
-            </div>
-          </Fragment>
-        ))}
-      </div>
-    </CardContent>
-  </Card>
 );
 
 const StrategySignal = ({ signal }: { signal: Signal }) => {
@@ -181,20 +135,21 @@ const StrategySignal = ({ signal }: { signal: Signal }) => {
   );
 };
 
-const StrategyIndicator = ({
+const StrategyIndicator = async ({
   indicator,
   tolerance,
 }: {
   indicator: Indicator;
   tolerance?: { sign: '-' | '+' | '±'; value: number };
 }) => {
+  const locales = await resolveLocales();
   let formattedValue: string;
   switch (indicator.unit) {
     case '$':
-      formattedValue = dollarFormatter.format(indicator.value);
+      formattedValue = dollarFormatter(locales, indicator.value);
       break;
     case '%':
-      formattedValue = percentFormatter.format(indicator.value);
+      formattedValue = percentFormatter(locales, indicator.value);
       break;
     default:
       formattedValue = indicator.value.toFixed(2);
@@ -202,7 +157,7 @@ const StrategyIndicator = ({
   }
 
   if (tolerance?.value) {
-    formattedValue += ` (${tolerance.sign}${percentFormatter.format(tolerance.value)})`;
+    formattedValue += ` (${tolerance.sign}${percentFormatter(locales, tolerance.value)})`;
   }
 
   const type = indicator.type;
@@ -216,50 +171,12 @@ const StrategyIndicator = ({
       <span className="text-3xl">{formattedValue}</span>
       <small className="muted">{name}</small>
       <small className="muted">
-        <ClientTimeFormat
-          formatOptions={{
-            month: 'short', // Abbreviated month name (e.g., Nov)
-            day: 'numeric', // Day of the month (e.g., 23)
-            year: 'numeric', // Full year (e.g., 2025)
-          }}
-          date={toUTCMarketClose(indicator.date)}
-        />
+        {new Intl.DateTimeFormat(locales, {
+          month: 'short', // Abbreviated month name (e.g., Nov)
+          day: 'numeric', // Day of the month (e.g., 23)
+          year: 'numeric', // Full year (e.g., 2025)
+        }).format(toUTCMarketClose(indicator.date))}
       </small>
     </div>
   );
 };
-
-const StrategyPercentChange = ({ value }: { value: number | null }) => {
-  return (
-    <Badge
-      variant="secondary"
-      className={clsx(
-        value &&
-          (value < 0
-            ? 'bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive border-none focus-visible:outline-none'
-            : 'border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5'),
-      )}
-    >
-      {value == null ? String(NaN) : percentReturnsFormatter.format(value)}
-    </Badge>
-  );
-};
-
-const dollarFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-});
-
-const percentFormatter = new Intl.NumberFormat('en-US', {
-  style: 'unit',
-  unit: 'percent',
-  unitDisplay: 'narrow',
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
-
-const percentReturnsFormatter = new Intl.NumberFormat('en-US', {
-  ...percentFormatter.resolvedOptions(),
-  minimumFractionDigits: 2,
-  signDisplay: 'exceptZero',
-});

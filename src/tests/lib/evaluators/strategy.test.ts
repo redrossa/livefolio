@@ -3,6 +3,7 @@ import type { Strategy as TestfolioStrategy } from '@/lib/testfolio';
 import { evalStrategy } from '@/lib/evaluators/strategy';
 import { evalAllocation } from '@/lib/evaluators/allocation';
 import { toUSMarketDateString } from '@/lib/market/dates';
+import { getStrategy, setStrategy } from '@/lib/redis/strategy';
 import type { Signal } from '@/lib/evaluators/signal';
 import type { Indicator } from '@/lib/evaluators/indicator';
 
@@ -14,8 +15,15 @@ vi.mock('@/lib/market/dates', () => ({
   toUSMarketDateString: vi.fn(() => '2024-01-02'),
 }));
 
+vi.mock('@/lib/redis/strategy', () => ({
+  getStrategy: vi.fn(),
+  setStrategy: vi.fn(),
+}));
+
 const mockEvalAllocation = vi.mocked(evalAllocation);
 const mockToMarketDate = vi.mocked(toUSMarketDateString);
+const mockGetStrategy = vi.mocked(getStrategy);
+const mockSetStrategy = vi.mocked(setStrategy);
 
 const evaluatedIndicator: Indicator = {
   type: 'Price',
@@ -95,6 +103,10 @@ describe('evalStrategy', () => {
     vi.setSystemTime(new Date('2024-01-02T12:00:00.000Z'));
     mockEvalAllocation.mockReset();
     mockToMarketDate.mockReturnValue('2024-01-02');
+    mockGetStrategy.mockReset();
+    mockSetStrategy.mockReset();
+    mockGetStrategy.mockResolvedValue(null);
+    mockSetStrategy.mockResolvedValue();
   });
 
   afterEach(() => {

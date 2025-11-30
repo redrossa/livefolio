@@ -11,7 +11,7 @@ import Link from 'next/link';
 const EXPECTED_DOMAIN = 'testfol.io';
 const EXPECTED_PATH = '/tactical';
 
-export default function Search() {
+export default function SearchForm() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

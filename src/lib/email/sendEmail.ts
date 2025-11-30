@@ -6,7 +6,7 @@ export default async function sendEmail(
   subject: string,
   content: ReactNode,
 ) {
-  const email = process.env.NOTIFICATIONS_EMAIL;
+  const email = process.env.NOTIFICATIONS_SENDER_EMAIL;
   if (!email) {
     throw new Error('No sender email provided.');
   }

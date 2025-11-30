@@ -7,8 +7,8 @@ import { useSearchParams } from 'next/navigation';
 
 export const VisitTestfolioButton = () => {
   const searchParams = useSearchParams();
-  const strategyId = searchParams.get('s');
-  const testfolioLink = `https://www.testfol.io/tactical?s=${strategyId}`;
+  const strategyLinkId = searchParams.get('s');
+  const testfolioLink = `https://www.testfol.io/tactical?s=${strategyLinkId}`;
 
   return (
     <Button type="button" variant="outline" asChild>

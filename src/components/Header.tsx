@@ -1,8 +1,7 @@
 import ThemeToggle from '@/components/ThemeToggle';
 import { Suspense } from 'react';
-import Search from '@/components/Search';
+import SearchForm from '@/components/SearchForm';
 import Link from 'next/link';
-import GitHubStarButton from '@/components/GitHubStarButton';
 
 const Header = () => (
   <header className="space-y-8">
@@ -10,13 +9,10 @@ const Header = () => (
       <h4>
         <Link href="/">Livefol.io</Link>
       </h4>
-      <div className="space-x-2">
-        <GitHubStarButton />
-        <ThemeToggle />
-      </div>
+      <ThemeToggle />
     </div>
     <Suspense fallback={<SearchSkeleton />}>
-      <Search />
+      <SearchForm />
     </Suspense>
   </header>
 );

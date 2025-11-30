@@ -1,18 +1,24 @@
 import { Strategy as TestfolioStrategy } from '@/lib/testfolio';
 import { Allocation, evalAllocation } from '@/lib/evaluators/allocation';
 import { toUSMarketDateString } from '@/lib/market/dates';
+import { getStrategy, setStrategy } from '@/lib/redis/strategy';
 
 export interface Strategy {
   name: string;
-  id: string;
+  linkId: string;
   date: Date;
   allocation: Allocation;
 }
 
 export async function evalStrategy(
   strategy: TestfolioStrategy,
-  id: string,
+  linkId: string,
 ): Promise<Strategy> {
+  let result = await getStrategy(linkId);
+  if (result) {
+    return result;
+  }
+
   const now = new Date();
   const date = toUSMarketDateString(now);
 
@@ -20,26 +26,34 @@ export async function evalStrategy(
     throw new Error('Strategy must include at least one allocation.');
   }
 
-  let result: Allocation | null = null;
+  let allocation: Allocation | null = null;
   for (const allocationDefinition of strategy.allocations) {
-    result = await evalAllocation(allocationDefinition, strategy.signals, date);
+    allocation = await evalAllocation(
+      allocationDefinition,
+      strategy.signals,
+      date,
+    );
 
     if (
       allocationDefinition.signals.length === 0 ||
-      result.signals.length > 0
+      allocation.signals.length > 0
     ) {
       break;
     }
   }
 
-  if (!result) {
+  if (!allocation) {
     throw new Error('Failed to evaluate strategy allocations.');
   }
 
-  return {
+  result = {
     name: strategy.name || 'Untitled Strategy',
-    id,
+    linkId: linkId,
     date: now,
-    allocation: result,
+    allocation,
   };
+
+  await setStrategy(result);
+
+  return result;
 }

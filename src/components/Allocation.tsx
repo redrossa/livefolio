@@ -38,7 +38,7 @@ export function Allocation({ allocation }: Readonly<Props>) {
 
           {allocation.holdings.map(({ ticker, distribution }, i) => (
             <Fragment key={`${ticker.display}-${i}`}>
-              <div className="truncate">{ticker.display}</div>
+              <div className="break-all">{ticker.display}</div>
               <div className="truncate justify-self-center md:justify-self-auto">
                 {distribution}%
               </div>

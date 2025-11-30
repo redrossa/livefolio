@@ -37,7 +37,10 @@ const SubscriptionEmail = ({
       <Head />
       <Tailwind>
         <Body className="bg-background">
-          <Preview>You are now subscribed to {stratName}</Preview>
+          <Preview>
+            You subscribed to &#34;{stratName}&#34;. We&#39;ll send you a
+            notification whenever this strategy changes allocation.
+          </Preview>
           <Container className="mx-auto py-5 pb-12">
             <Heading as="h1" className="mx-auto font-bold">
               Livefol.io

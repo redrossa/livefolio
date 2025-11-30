@@ -41,7 +41,7 @@ async function handler(req: NextRequest) {
   const batchInput = subscribers.map(({ email, verificationId }) => ({
     from,
     to: email,
-    subject: 'An update on your subscribed strategy',
+    subject: `Update on strategy "${evaluatedStrategy.name}"`,
     // Resend supports React components here
     react: ReallocationEmail({
       subscriberEmail: email,

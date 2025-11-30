@@ -46,7 +46,9 @@ const ResubscriptionEmail = ({
       <Tailwind>
         <Body className="bg-background">
           <Preview>
-            Do you want to replace your subscribed strategy to {newStratName}?
+            You requested to subscribe to strategy &#34;{newStratName}&#34;, but
+            you are already subscribed to &#34;{oldStratName}&#34;. You can only
+            subscribe to one strategy at a time. Confirm to change subscription.
           </Preview>
           <Container className="mx-auto py-5 pb-12">
             <Heading as="h1" className="mx-auto font-bold">

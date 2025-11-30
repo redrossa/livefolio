@@ -87,9 +87,16 @@ export default async function subscribe(
       };
     }
 
+    if (oldStrategy.linkId === strategyLinkId) {
+      return {
+        status: 'error',
+        message: 'You are already subscribed to this strategy.',
+      };
+    }
+
     await sendEmail(
       email,
-      'Confirm your strategy change',
+      'Confirm your strategy subscription change',
       ResubscriptionEmail({
         subscriberEmail: email,
         verificationId: existing.verificationId,
@@ -107,7 +114,7 @@ export default async function subscribe(
     return {
       status: 'success',
       message:
-        'Please check your inbox to confirm the strategy change for this email.',
+        'Please check your inbox to confirm the change to your subscribed strategy.',
     };
   } catch (error) {
     console.error(error);

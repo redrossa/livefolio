@@ -38,7 +38,9 @@ const VerificationEmail = ({
       <Head />
       <Tailwind>
         <Body className="bg-background">
-          <Preview>Verify email to subscribe to strategy {stratName}</Preview>
+          <Preview>
+            Verify email to subscribe to strategy &#34;{stratName}&#34;
+          </Preview>
           <Container className="mx-auto py-5 pb-12">
             <Heading as="h1" className="mx-auto font-bold">
               Livefol.io

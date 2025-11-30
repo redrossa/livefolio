@@ -25,6 +25,13 @@ interface Props {
   strategy: Strategy;
 }
 
+function joinWithAnd(items: string[]): string {
+  if (items.length === 0) return '';
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
+}
+
 const ReallocationEmail = ({
   subscriberEmail,
   verificationId,
@@ -38,8 +45,14 @@ const ReallocationEmail = ({
       <Tailwind>
         <Body className="bg-background">
           <Preview>
-            Your subscribed strategy {strategy.name} switched allocation at
-            market close today.
+            Your subscribed strategy &#34;{strategy.name}&#34; switched
+            allocation at market close today. It now holds{' '}
+            {joinWithAnd(
+              strategy.allocation.holdings.map(
+                (h) => `${h.ticker.display} (${h.distribution}%)`,
+              ),
+            )}
+            .
           </Preview>
           <Container className="mx-auto py-5 pb-12">
             <Heading as="h1" className="mx-auto font-bold">
@@ -100,7 +113,10 @@ const AllocationTable = ({
 
       {/* Body */}
       {holdings.map((h, index) => (
-        <Row key={index} className="bg-white border-b border-zinc-200">
+        <Row
+          key={`${h.ticker}-${h.distribution}-${index}`}
+          className="bg-white border-b border-zinc-200"
+        >
           <Column width="50%" className="px-6 py-4 text-left align-middle">
             <Text className="m-0 text-sm font-medium text-zinc-900 whitespace-nowrap">
               {h.ticker}

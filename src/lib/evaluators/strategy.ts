@@ -14,12 +14,8 @@ export async function evalStrategy(
   strategy: TestfolioStrategy,
   linkId: string,
 ): Promise<Strategy> {
-  const start = Date.now();
-
   let result = await getStrategy(linkId);
   if (result) {
-    const end = Date.now();
-    console.log((end - start) / 1000);
     return result;
   }
 
@@ -59,7 +55,5 @@ export async function evalStrategy(
 
   await setStrategy(result);
 
-  const end = Date.now();
-  console.log((end - start) / 1000);
   return result;
 }

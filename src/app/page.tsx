@@ -12,6 +12,7 @@ import { redirect, RedirectType } from 'next/navigation';
 import { sendEmail } from '@/lib/email';
 import SubscriptionEmail from '@/components/SubscriptionEmail';
 import { getStrategyById } from '@/lib/database/strategy';
+import { formatStrategyName } from '@/lib/email/format';
 
 interface Props {
   searchParams: Promise<{
@@ -98,13 +99,15 @@ async function handleSubscribe(sub: Subscription): Promise<never> {
     redirect('/', RedirectType.replace);
   }
 
+  const stratName = formatStrategyName(strategy.definition.name);
+
   await sendEmail(
     sub.email,
-    'You just subscribed to a strategy',
+    `You just subscribed to strategy "${stratName}"`,
     <SubscriptionEmail
       subscriberEmail={sub.email}
       verificationId={sub.verificationId}
-      strategyName={strategy.definition.name || 'Untitled Strategy'}
+      strategyName={stratName}
       strategyLinkId={strategy.linkId}
     />,
   );

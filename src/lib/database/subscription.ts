@@ -179,3 +179,18 @@ export async function getSubscriptionByEmail(
 
   return rows.length ? mapSubscription(rows[0]) : null;
 }
+
+export async function getUnverifiedSubscriptions(): Promise<Subscription[]> {
+  const rows = (await sql`
+    SELECT
+      "id",
+      "email",
+      "date_verified",
+      "strategy_id",
+      "verification_id"
+    FROM "subscription"
+    WHERE "date_verified" IS NULL
+  `) as SubscriptionRow[];
+
+  return rows.map(mapSubscription);
+}

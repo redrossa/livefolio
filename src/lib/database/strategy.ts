@@ -65,8 +65,6 @@ export async function getStrategyById(id: number): Promise<Strategy | null> {
     WHERE "id" = ${id};
   `) as StrategyRow[];
 
-  console.log(rows);
-
   return rows.length ? mapStrategy(rows[0]) : null;
 }
 

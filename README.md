@@ -19,8 +19,7 @@ Steps to set up a local instance of [Livefol.io](https://livefol.io) for develop
    cp .env.example .env.local
    ```
 
-3. (Optionally) Run QStash development server. This is to develop CRON jobs, which spawns background jobs handled by
-   QStash.
+3. (Optionally) Run QStash development server.
 
    ```shell
    npx @upstash/qstash-cli@latest dev
@@ -31,6 +30,21 @@ Steps to set up a local instance of [Livefol.io](https://livefol.io) for develop
    ```shell
    npm run dev
    ```
+
+### Running cron handlers manually
+
+[Vercel Cron](https://vercel.com/docs/cron-jobs) are used to run periodic tasks, such as daily strategy evaluation and
+notification. Vercel calls one of our API route handlers as defined in `vercel.json` as an entry point to the tasks. You
+can manually trigger the API route handlers by using a tool like Postman to do a GET request, and provide the cron
+secret defined in the `.env` file in the `Authorization` header as `Bearer <CRON_SECRET>`.
+
+### Running QStash development server
+
+[Upstash QStash](https://upstash.com/docs/qstash/overall/getstarted) is used to run background tasks, such as sending
+emails to subscribers as a result of a strategy evaluation. Like the cron jobs, an API route is defined as the entry
+point. For local development and testing, You will need to locally run QStash development server in step (3). You will
+need copy the given variables `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, and `QSTASH_NEXT_SIGNING_KEY` to the .env
+file.
 
 ## The Motivation
 

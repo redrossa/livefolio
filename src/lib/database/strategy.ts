@@ -8,6 +8,7 @@ export interface Strategy {
   definition: TestfolioStrategy;
   dateAdded: Date;
   formattedName: string;
+  latestAllocationName: string | null;
 }
 
 // Raw DB row (snake_case, timestamptz as string)
@@ -17,6 +18,7 @@ interface StrategyRow {
   definition: TestfolioStrategy;
   date_added: string;
   formatted_name: string;
+  latest_allocation_name: string | null;
 }
 
 function mapStrategy(row: StrategyRow): Strategy {
@@ -26,6 +28,7 @@ function mapStrategy(row: StrategyRow): Strategy {
     definition: row.definition,
     dateAdded: new Date(row.date_added),
     formattedName: row.formatted_name,
+    latestAllocationName: row.latest_allocation_name,
   };
 }
 
@@ -43,7 +46,8 @@ export async function createStrategy(
       "link_id",
       "definition",
       "date_added",
-      "formatted_name";
+      "formatted_name",
+      "latest_allocation_name";
   `) as StrategyRow[];
 
   if (rows.length === 0) {
@@ -60,7 +64,8 @@ export async function getStrategyById(id: number): Promise<Strategy | null> {
       "link_id",
       "definition",
       "date_added",
-      "formatted_name"
+      "formatted_name",
+      "latest_allocation_name"
     FROM "strategy"
     WHERE "id" = ${id};
   `) as StrategyRow[];
@@ -77,7 +82,8 @@ export async function getStrategyByLinkId(
       "link_id",
       "definition",
       "date_added",
-      "formatted_name"
+      "formatted_name",
+      "latest_allocation_name"
     FROM "strategy"
     WHERE "link_id" = ${linkId};
   `) as StrategyRow[];
@@ -92,7 +98,8 @@ export async function listStrategies(): Promise<Strategy[]> {
       "link_id",
       "definition",
       "date_added",
-      "formatted_name"
+      "formatted_name",
+      "latest_allocation_name"
     FROM "strategy"
     ORDER BY "date_added" DESC;
   `) as StrategyRow[];
@@ -111,6 +118,7 @@ interface JoinedRow {
   strategy_definition: TestfolioStrategy;
   strategy_date_added: string;
   strategy_formatted_name: string;
+  strategy_latest_allocation_name: string | null;
 
   // subscription fields
   subscription_id: number;
@@ -127,6 +135,7 @@ function mapRowToStrategy(row: JoinedRow): Strategy {
     definition: row.strategy_definition,
     dateAdded: new Date(row.strategy_date_added),
     formattedName: row.strategy_formatted_name,
+    latestAllocationName: row.strategy_latest_allocation_name,
   };
 }
 
@@ -152,6 +161,7 @@ export async function getStrategiesWithSubscriptions(): Promise<
       s.definition      AS strategy_definition,
       s.date_added      AS strategy_date_added,
       s.formatted_name  AS strategy_formatted_name,
+      s.latest_allocation_name AS strategy_latest_allocation_name,
 
       sub.id            AS subscription_id,
       sub.email         AS subscription_email,
@@ -180,4 +190,24 @@ export async function getStrategiesWithSubscriptions(): Promise<
   }
 
   return Array.from(byStrategy.values());
+}
+
+export async function updateLatestAllocationName(
+  strategyId: number,
+  latestAllocationName: string,
+): Promise<Strategy | null> {
+  const rows = (await sql`
+    UPDATE "strategy"
+    SET "latest_allocation_name" = ${latestAllocationName}
+    WHERE "id" = ${strategyId}
+    RETURNING
+      "id",
+      "link_id",
+      "definition",
+      "date_added",
+      "formatted_name",
+      "latest_allocation_name";
+  `) as StrategyRow[];
+
+  return rows.length ? mapStrategy(rows[0]) : null;
 }

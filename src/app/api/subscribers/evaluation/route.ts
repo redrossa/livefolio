@@ -4,6 +4,10 @@ import { type Strategy as TestfolioStrategy } from '@/lib/testfolio';
 import { evalStrategy, Strategy } from '@/lib/evaluators';
 import ReallocationEmail from '@/components/ReallocationEmail';
 import resend from '@/lib/email/resend'; // your Resend client (new Resend(API_KEY))
+import {
+  getStrategyByLinkId,
+  updateLatestAllocationName,
+} from '@/lib/database/strategy';
 
 export interface EvaluationPayload {
   strategyLinkId: string;
@@ -18,19 +22,45 @@ async function handler(req: NextRequest) {
   const { strategyLinkId, strategyDefinition, subscribers } =
     (await req.json()) as EvaluationPayload;
 
-  // Nothing to do for this job
-  if (!subscribers || subscribers.length === 0) {
-    return NextResponse.json(
-      { strategyLinkId, subscriberCount: 0, skipped: true },
-      { status: 200 },
-    );
-  }
-
   // 1) Evaluate the strategy once
   const evaluatedStrategy: Strategy = await evalStrategy(
     strategyDefinition,
     strategyLinkId,
   );
+
+  const strategy = await getStrategyByLinkId(strategyLinkId);
+
+  if (!strategy) {
+    return NextResponse.json(
+      { strategyLinkId, error: 'Strategy not found' },
+      { status: 404 },
+    );
+  }
+
+  const evaluatedAllocationName = evaluatedStrategy.allocation.name;
+  const hasNewAllocation =
+    strategy.latestAllocationName !== evaluatedAllocationName;
+
+  if (!hasNewAllocation) {
+    return NextResponse.json(
+      {
+        strategyLinkId,
+        subscriberCount: subscribers?.length ?? 0,
+        skipped: true,
+      },
+      { status: 200 },
+    );
+  }
+
+  // Nothing to do for this job
+  if (!subscribers || subscribers.length === 0) {
+    await updateLatestAllocationName(strategy.id, evaluatedAllocationName);
+
+    return NextResponse.json(
+      { strategyLinkId, subscriberCount: 0, skipped: true },
+      { status: 200 },
+    );
+  }
 
   const from = process.env.NOTIFICATIONS_SENDER_EMAIL;
   if (!from) {
@@ -60,6 +90,8 @@ async function handler(req: NextRequest) {
       { status: 500 },
     );
   }
+
+  await updateLatestAllocationName(strategy.id, evaluatedAllocationName);
 
   return NextResponse.json({
     strategyLinkId,

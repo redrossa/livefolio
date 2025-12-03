@@ -4,6 +4,7 @@ import { PublishBatchRequest } from '@upstash/qstash';
 import { getStrategiesWithSubscriptions } from '@/lib/database/strategy';
 import qstash from '@/lib/qstash/qstash';
 import type { EvaluationPayload } from '@/app/api/subscribers/evaluation/route';
+import resolveOrigin from '@/lib/headers/resolveOrigin';
 
 const NOTIFY_SUBSCRIBERS_PATH = '/api/subscribers/evaluation';
 
@@ -16,8 +17,7 @@ export async function GET(req: NextRequest) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  const url = new URL(req.url);
-  const baseUrl = url.origin;
+  const origin = await resolveOrigin();
 
   // Each item: Strategy & { subscriptions: Subscription[] }
   const strategies = await getStrategiesWithSubscriptions();
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
   const batchRequest: PublishBatchRequest<EvaluationPayload>[] = strategies.map(
     (strategy) => ({
-      url: `${baseUrl}${NOTIFY_SUBSCRIBERS_PATH}`,
+      url: `${origin}${NOTIFY_SUBSCRIBERS_PATH}`,
       headers: {
         'x-vercel-protection-bypass':
           process.env.VERCEL_AUTOMATION_BYPASS_SECRET!,

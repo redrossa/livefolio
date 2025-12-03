@@ -30,6 +30,10 @@ export async function GET(req: NextRequest) {
   const batchRequest: PublishBatchRequest<EvaluationPayload>[] = strategies.map(
     (strategy) => ({
       url: `${baseUrl}${NOTIFY_SUBSCRIBERS_PATH}`,
+      headers: {
+        'x-vercel-protection-bypass':
+          process.env.VERCEL_AUTOMATION_BYPASS_SECRET!,
+      },
       body: {
         strategyLinkId: strategy.linkId,
         strategyDefinition: strategy.definition,

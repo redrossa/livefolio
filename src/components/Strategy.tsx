@@ -14,6 +14,10 @@ import { toUTCMarketClose } from '@/lib/market/dates';
 import { dollarFormatter, percentFormatter } from '@/lib/intl/number';
 import { Allocation } from '@/components/Allocation';
 import resolveLocales from '@/lib/headers/resolveLocales';
+import {
+  getStrategyByLinkId,
+  updateLatestAllocationName,
+} from '@/lib/database/strategy';
 
 interface Props {
   strategyLinkId: string;
@@ -27,6 +31,17 @@ export const Strategy = async ({ strategyLinkId }: Props) => {
   } catch (e) {
     console.error((e as Error).message);
     return <p>Something went wrong evaluating this strategy.</p>;
+  }
+
+  try {
+    // let's fill in latest_allocation_name if it's NULL (first time evaluating)
+    const strategy = await getStrategyByLinkId(strategyLinkId);
+    if (strategy && !strategy.latestAllocationName) {
+      await updateLatestAllocationName(strategy.id, evaluated.allocation.name);
+    }
+  } catch (e) {
+    console.error((e as Error).message);
+    // don't return here because latest_allocation_name is optional
   }
 
   return (

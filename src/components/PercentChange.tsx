@@ -7,6 +7,7 @@ import { percentReturnsFormatter } from '@/lib/intl/number';
 import { cache } from 'react';
 import { fetchYahooQuote } from '@/lib/series/yahoo';
 import resolveLocales from '@/lib/headers/resolveLocales';
+import { Ticker } from '@/lib/evaluators';
 
 const getQuoteChangePercent = cache(async (symbol: string) => {
   const quote = await fetchYahooQuote(symbol);
@@ -55,21 +56,27 @@ export const PercentChangeSymbol = async ({ symbol }: { symbol: string }) => {
 
 // total, waits for *all* holdings
 export const TotalAllocationChange = async ({
-  symbols,
+  holdings,
 }: {
-  symbols: string[];
+  holdings: Array<{
+    ticker: Ticker;
+    distribution: number;
+  }>;
 }) => {
   const values = await Promise.all(
-    symbols.map(async (s) => {
+    holdings.map(async ({ ticker, distribution }) => {
       try {
-        return await getQuoteChangePercent(s);
+        return (
+          (((await getQuoteChangePercent(ticker.symbol)) ?? 0) * distribution) /
+          100
+        );
       } catch {
         return 0;
       }
     }),
   );
 
-  const totalChange = values.reduce((sum, v) => Number(sum) + (v ?? 0), 0);
+  const totalChange = values.reduce((sum, v) => sum + v, 0);
 
   return <PercentChangeValue value={totalChange} />;
 };

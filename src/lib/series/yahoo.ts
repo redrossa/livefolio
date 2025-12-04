@@ -35,9 +35,7 @@ export default async function fetchYahooSeries(
       return true;
     }
 
-    const hours = quoteDate.getUTCHours();
-    const minutes = quoteDate.getUTCMinutes();
-    return hours > 21 || (hours === 21 && minutes >= 0);
+    return quoteDate.getUTCHours() >= 21;
   });
 
   return quotes.map((q) => ({

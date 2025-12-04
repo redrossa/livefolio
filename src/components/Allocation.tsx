@@ -12,8 +12,6 @@ interface Props {
 }
 
 export function Allocation({ allocation }: Readonly<Props>) {
-  const symbols = allocation.holdings.map((h) => h.ticker.symbol);
-
   return (
     <Card className="mt-4 rounded-md">
       <CardHeader className="gap-0 border-b border-solid border-border pb-3">
@@ -22,7 +20,7 @@ export function Allocation({ allocation }: Readonly<Props>) {
           <h3 className="mt-0 truncate">{allocation.name}</h3>
           {/* TOTAL: waits until all quotes resolved */}
           <Suspense fallback={<PercentChangeSkeleton />}>
-            <TotalAllocationChange symbols={symbols} />
+            <TotalAllocationChange holdings={allocation.holdings} />
           </Suspense>
         </div>
       </CardHeader>

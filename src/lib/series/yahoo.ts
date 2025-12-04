@@ -20,28 +20,23 @@ export default async function fetchYahooSeries(
     return: 'array',
   });
 
-  const today = toUSMarketDateString(new Date());
-
-  const quotes = (result.quotes ?? []).filter((quote) => {
-    // Yahoo intraday data for the current session arrives before 21:00 UTC;
-    // only keep today's point once the market has closed to avoid partial days.
-    if (!quote.date) {
-      return false;
-    }
-
-    const quoteDate = quote.date;
-    const quoteMarketDate = toUSMarketDateString(quoteDate);
-    if (quoteMarketDate !== today) {
-      return true;
-    }
-
-    return quoteDate.getUTCHours() >= 21;
-  });
-
-  return quotes.map((q) => ({
+  const quotes = result.quotes.map((q) => ({
     date: toUSMarketDateString(q.date),
     value: q.close ?? 0,
   }));
+  const today = new Date();
+
+  if (
+    today.getUTCHours() < 21 &&
+    today.getUTCDate() ===
+      result.quotes[result.quotes.length - 1].date.getUTCDate()
+  ) {
+    // exclude today's non-closing price, taking into consideration the possibility that Yahoo Finance date time
+    // lags even if the market already closessdfssdfsdf
+    quotes.pop();
+  }
+
+  return quotes;
 }
 
 export async function fetchYahooQuote(ticker: string) {

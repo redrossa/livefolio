@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { Allocation as EvaluatedAllocation } from '@/lib/evaluators/allocation';
 import {
   PercentChangeSkeleton,
-  PercentChangeSymbol,
+  PercentChange,
   TotalAllocationChange,
 } from '@/components/PercentChange';
 
@@ -43,7 +43,7 @@ export function Allocation({ allocation }: Readonly<Props>) {
               <div className="justify-self-end md:justify-self-auto">
                 {/* PER HOLDING: streams independently */}
                 <Suspense fallback={<PercentChangeSkeleton />}>
-                  <PercentChangeSymbol symbol={ticker.symbol} />
+                  <PercentChange ticker={ticker} />
                 </Suspense>
               </div>
             </Fragment>

@@ -42,11 +42,12 @@ export const PercentChangeSkeleton = () => (
   </Badge>
 );
 
-export const PercentChangeSymbol = async ({ symbol }: { symbol: string }) => {
+export const PercentChange = async ({ ticker }: { ticker: Ticker }) => {
   let value: number | null = null;
 
   try {
-    value = await getQuoteChangePercent(symbol);
+    value =
+      ((await getQuoteChangePercent(ticker.symbol)) ?? NaN) * ticker.leverage;
   } catch (e) {
     console.error((e as Error).message);
   }
@@ -67,8 +68,9 @@ export const TotalAllocationChange = async ({
     holdings.map(async ({ ticker, distribution }) => {
       try {
         return (
-          (((await getQuoteChangePercent(ticker.symbol)) ?? 0) * distribution) /
-          100
+          ((await getQuoteChangePercent(ticker.symbol)) ?? 0) *
+          ticker.leverage *
+          (distribution / 100)
         );
       } catch {
         return 0;

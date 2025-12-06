@@ -7,44 +7,95 @@ current market data.
 
 Steps to set up a local instance of [Livefol.io](https://livefol.io) for development:
 
-1. Install dependencies
-
-   ```shell
-   npm i
-   ```
-
-2. Fill in environment variables
+1. Fill in remaining environment variables
 
    ```shell
    cp .env.example .env.local
    ```
 
-3. (Optionally) Run QStash development server.
+2. Start mock external services
 
    ```shell
-   npx @upstash/qstash-cli@latest dev
+   docker compose up -d
    ```
 
-4. Run development server
+3. Run development server
 
    ```shell
    npm run dev
    ```
 
-### Running cron handlers manually
+### External Service Dependencies
 
-[Vercel Cron](https://vercel.com/docs/cron-jobs) are used to run periodic tasks, such as daily strategy evaluation and
-notification. Vercel calls one of our API route handlers as defined in `vercel.json` as an entry point to the tasks. You
-can manually trigger the API route handlers by using a tool like Postman to do a GET request, and provide the cron
-secret defined in the `.env` file in the `Authorization` header as `Bearer <CRON_SECRET>`.
+Livefol.io depends on a few external services for storage, background tasks, cron jobs, etc., some of which are mockable
+as Docker images. I recommend you follow the steps outlined in this section to run some of the external services
+locally, so you don't have to go through registering billable services.
 
-### Running QStash development server
+#### Yahoo Finance
 
-[Upstash QStash](https://upstash.com/docs/qstash/overall/getstarted) is used to run background tasks, such as sending
+Historical and real time market data are sourced from Yahoo Finance
+through [yahoo-finance2](https://github.com/gadicc/yahoo-finance2). It's a community project unaffiliated with Yahoo, so
+bear in mind that service availability and data consistency are not guaranteed. Nevertheless, it's been working well
+since 2013 and free. On the other hand, Testfol.io sources most of its historical data from Tiingo, so there could be
+slight discrepancies. No API key required.
+
+#### Federal Reserve Economic Data of St. Louis (FRED®)
+
+While Yahoo Finance provides most ticker data, some are sourced from [FRED®](https://fred.stlouisfed.org), particularly
+inflation and some treasury yield rates. The tickers sourced from FRED are the same as those in Testfol.io. You will
+need to provide your API key `FRED_API_KEY`.
+
+#### Resend
+
+For email related functionalities, we use [Resend](https://resend.com/). You will need to provide your API key
+`RESEND_API_KEY`, as well as a sender email `NOTIFICATIONS_SENDER_EMAIL`.
+
+#### Vercel Cron
+
+We run periodic tasks, such as daily strategy evaluation and notification, which are powered
+by [Vercel Cron](https://vercel.com/docs/cron-jobs). Vercel calls one of our API route handlers as defined in
+`vercel.json` as an entry point to the tasks. You can manually trigger the API route handlers by using a tool like
+Postman to do a GET request, and provide the cron secret defined in your set of environment variables in the
+`Authorization` header as `Bearer <CRON_SECRET>`.
+
+Here's an example for manually triggering the cron job `/api/cron/evaluation`:
+
+```shell
+curl -X GET \
+  -H "Authorization: Bearer my_cron_secret" \
+  http://localhost:3000/api/cron/evaluation
+```
+
+#### Neon Serverless Postgres
+
+For the database, we use [Neon](https://neon.com) and
+the [Neon serverless driver](https://neon.com/docs/serverless/serverless-driver). For local development, you can use the
+containerized Postgres and Neon Proxy services defined in the `docker-compose.yml`. You will need to provide the
+database URL `DATABASE_URL` or use the default in `.env.local` if running in Docker.
+
+#### Upstash QStash
+
+[Upstash QStash](https://upstash.com/docs/qstash/overall/getstarted) is used to run asynchronous background tasks, such
+as sending
 emails to subscribers as a result of a strategy evaluation. Like the cron jobs, an API route is defined as the entry
-point. For local development and testing, You will need to locally run QStash development server in step (3). You will
-need copy the given variables `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, and `QSTASH_NEXT_SIGNING_KEY` to the .env
-file.
+point. For local development and testing, you can use the containerized service defined in the `docker-compose.yml`
+file. You will need to provide the environment variables `QSTASH_*` or use the default in `.env.local` if running in
+Docker.
+
+You can manually trigger a QStash job by publishing a message to the QStash service to call our API route handlers.
+Here's an example for triggering `/api/subscribers/waitlisted` with default Docker configuration.
+
+```shell
+curl -X POST 'http://localhost:8080/v2/publish/http://localhost:3000/api/subscribers/waitlisted' \
+    -H 'Authorization: Bearer eyJVc2VySUQiOiJkZWZhdWx0VXNlciIsIlBhc3N3b3JkIjoiZGVmYXVsdFBhc3N3b3JkIn0='
+```
+
+#### Upstash Redis
+
+We use [Upstash](https://upstash.com) for our serverless Redis provider. We store cached evaluated values, so we don't
+have to reevaluate signals and indicators for the same strategy more than once a day with expiry times at 4 pm ET. For
+local development, you can use the containerized Redis and Serverless Redis HTTP (SRH). You will need to provide the
+environment variables `UPSTASH_*` or use the default values in `.env.local` if running in docker.
 
 ## The Motivation
 
